@@ -47,6 +47,7 @@ export default function Dashboard() {
   const [platform, setPlatform] = useState<'ios' | 'android'>('ios');
   const [setupOpen, setSetupOpen] = useState(false);
   const [selectedMask, setSelectedMask] = useState<string | null>(null);
+  const [creatingMask, setCreatingMask] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('conceal_token');
@@ -68,6 +69,26 @@ export default function Dashboard() {
     navigator.clipboard.writeText(text);
     setCopied(text);
     setTimeout(() => setCopied(null), 2000);
+  }
+
+  async function createMask() {
+    const token = localStorage.getItem('conceal_token');
+    if (!token) return;
+    setCreatingMask(true);
+    try {
+      const res = await fetch(`${API_BASE}/v1/masking-addresses`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        const newMask = await res.json() as MaskAddr;
+        setMasks(prev => [newMask, ...prev]);
+        setSelectedMask(newMask.address);
+      }
+    } finally {
+      setCreatingMask(false);
+    }
   }
 
   const maskAddr = selectedMask ?? masks[0]?.address ?? null;
@@ -126,9 +147,23 @@ export default function Dashboard() {
             )}
 
             {/* Masking addresses */}
-            {masks.length > 0 && (
+            {(masks.length > 0 || accounts.length > 0) && (
               <section className="space-y-3">
-                <h2 className="font-semibold text-gray-300">마스킹 주소</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-gray-300">마스킹 주소</h2>
+                  <button
+                    onClick={createMask}
+                    disabled={creatingMask}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
+                  >
+                    {creatingMask ? '생성 중...' : '+ 새 주소'}
+                  </button>
+                </div>
+                {masks.length === 0 && (
+                  <div className="bg-gray-900 rounded-xl px-4 py-3 text-sm text-gray-500">
+                    아직 마스킹 주소가 없습니다. "+ 새 주소"를 눌러 생성하세요.
+                  </div>
+                )}
                 {masks.map(m => (
                   <button
                     key={m.id}
