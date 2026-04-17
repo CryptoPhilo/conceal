@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [copied, setCopied] = useState<string | null>(null);
   const [platform, setPlatform] = useState<'ios' | 'android'>('ios');
   const [setupOpen, setSetupOpen] = useState(false);
+  const [selectedMask, setSelectedMask] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('conceal_token');
@@ -69,7 +70,7 @@ export default function Dashboard() {
     setTimeout(() => setCopied(null), 2000);
   }
 
-  const maskAddr = masks[0]?.address;
+  const maskAddr = selectedMask ?? masks[0]?.address ?? null;
   const steps = platform === 'ios' ? IOS_STEPS : ANDROID_STEPS;
 
   return (
@@ -174,18 +175,36 @@ export default function Dashboard() {
                       ))}
                     </div>
 
-                    {maskAddr && (
+                    {masks.length > 0 && (
                       <div className="space-y-1.5">
-                        <p className="text-xs text-gray-400">마스킹 주소 (탭하여 복사)</p>
-                        <button
-                          onClick={() => copy(maskAddr)}
-                          className="w-full text-left font-mono text-indigo-300 bg-gray-800 rounded-lg px-3 py-2 text-sm hover:bg-gray-700 transition-colors flex items-center justify-between"
-                        >
-                          <span className="truncate">{maskAddr}</span>
-                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                            {copied === maskAddr ? '✓ 복사됨' : '복사'}
-                          </span>
-                        </button>
+                        <p className="text-xs text-gray-400">
+                          마스킹 주소{masks.length > 1 ? ' (선택 후 복사)' : ' (탭하여 복사)'}
+                        </p>
+                        {masks.length > 1 && (
+                          <div className="space-y-1">
+                            {masks.map(m => (
+                              <button
+                                key={m.id}
+                                onClick={() => setSelectedMask(m.address)}
+                                className={`w-full text-left font-mono text-sm rounded-lg px-3 py-2 transition-colors flex items-center justify-between ${maskAddr === m.address ? 'bg-indigo-900/60 border border-indigo-600 text-indigo-200' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                              >
+                                <span className="truncate">{m.address}</span>
+                                {maskAddr === m.address && <span className="text-xs text-indigo-400 ml-2 flex-shrink-0">선택됨</span>}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {maskAddr && (
+                          <button
+                            onClick={() => copy(maskAddr)}
+                            className="w-full text-left font-mono text-indigo-300 bg-gray-800 rounded-lg px-3 py-2 text-sm hover:bg-gray-700 transition-colors flex items-center justify-between"
+                          >
+                            <span className="truncate">{maskAddr}</span>
+                            <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                              {copied === maskAddr ? '✓ 복사됨' : '복사'}
+                            </span>
+                          </button>
+                        )}
                       </div>
                     )}
 
