@@ -1,11 +1,12 @@
 import { Worker } from "bullmq";
 import Redis from "ioredis";
-import type { InboundEmailJob, SievedJob, DeliveryJob } from "@shadow/shared";
+import type { InboundEmailJob, SievedJob, DeliveryJob, EmailAnalysisJob } from "@shadow/shared";
 import { QUEUE_NAMES } from "@shadow/shared";
 import { processInbound } from "./workers/inbound.js";
 import { processSieveL2 } from "./workers/sieve-l2.js";
 import { processBrain } from "./workers/brain.js";
 import { processDelivery } from "./workers/delivery.js";
+import { processEmailAnalysis } from "./workers/email-analysis.js";
 
 const REDIS_URL = process.env.REDIS_URL;
 if (!REDIS_URL) throw new Error("REDIS_URL is not set");
@@ -90,12 +91,27 @@ deliveryWorker.on("failed", (job, err) => {
   console.error(`[delivery] job ${job?.id} failed:`, err.message);
 });
 
+// ── Email Analysis (onboarding batch scan) ───────────────────────────────────
+const emailAnalysisWorker = new Worker<EmailAnalysisJob>(
+  QUEUE_NAMES.EMAIL_ANALYSIS,
+  (job) => processEmailAnalysis(job),
+  { connection, concurrency: 3 }
+);
+
+emailAnalysisWorker.on("completed", (job) => {
+  console.log(`[email-analysis] job ${job.id} completed`);
+});
+emailAnalysisWorker.on("failed", (job, err) => {
+  console.error(`[email-analysis] job ${job?.id} failed:`, err.message);
+});
+
 console.log("[worker] All pipeline workers started:");
 console.log("  • email:inbound    → Sieve L1");
 console.log("  • email:sieve      → Sieve L2");
 console.log("  • email:brain      → Brain (priority)");
 console.log("  • email:brain:batch → Brain (batch)");
 console.log("  • email:delivery   → Delivery Hub");
+console.log("  • email-analysis   → Onboarding batch scan");
 
 async function shutdown() {
   await Promise.all([
@@ -104,6 +120,7 @@ async function shutdown() {
     brainWorker.close(),
     brainBatchWorker.close(),
     deliveryWorker.close(),
+    emailAnalysisWorker.close(),
   ]);
   connection.disconnect();
   redisClient.disconnect();

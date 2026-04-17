@@ -6,6 +6,9 @@ import { internalRoutes } from "./routes/internal.js";
 import { deliveryDestinationsRoutes } from "./routes/delivery-destinations.js";
 import { emailLogRoutes } from "./routes/email-log.js";
 import { digestRoutes } from "./routes/digest.js";
+import { oauthRoutes } from "./routes/oauth.js";
+import { connectedAccountsRoutes } from "./routes/connected-accounts.js";
+import { onboardingRoutes } from "./routes/onboarding.js";
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -26,6 +29,9 @@ export function buildApp() {
   app.register(deliveryDestinationsRoutes, { prefix: "/v1" });
   app.register(emailLogRoutes, { prefix: "/v1" });
   app.register(digestRoutes, { prefix: "/v1" });
+  app.register(oauthRoutes, { prefix: "/v1" });
+  app.register(connectedAccountsRoutes, { prefix: "/v1" });
+  app.register(onboardingRoutes, { prefix: "/v1" });
 
   app.get("/health", async () => ({ ok: true }));
 

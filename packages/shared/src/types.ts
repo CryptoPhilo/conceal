@@ -69,6 +69,15 @@ export type DeliveryJob = SievedJob & {
   replyDraft?: string;
 };
 
+export interface EmailAnalysisJob {
+  userId: string;
+  connectedAccountId: string;
+  provider: "gmail" | "outlook" | "yahoo" | "imap";
+  jobId: string;
+  /** Max emails to fetch for analysis — default 500 */
+  limit?: number;
+}
+
 export type SieveAction = "pass_through" | "quarantine" | "auto_delete";
 
 export interface SieveResult {
