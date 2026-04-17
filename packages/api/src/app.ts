@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import fastifyJwt from "@fastify/jwt";
+import fastifyCors from "@fastify/cors";
 import { maskingAddressRoutes } from "./routes/masking-addresses.js";
 import { filterRulesRoutes } from "./routes/filter-rules.js";
 import { internalRoutes } from "./routes/internal.js";
@@ -12,6 +13,19 @@ import { onboardingRoutes } from "./routes/onboarding.js";
 
 export function buildApp() {
   const app = Fastify({ logger: true });
+
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  app.register(fastifyCors, {
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error("Not allowed by CORS"), false);
+    },
+    credentials: true,
+  });
 
   app.register(fastifyJwt, { secret: process.env.JWT_SECRET! });
 
