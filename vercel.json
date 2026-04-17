@@ -3,14 +3,14 @@
   "installCommand": "npm ci",
   "buildCommand": "",
   "functions": {
-    "api/index.ts": {
+    "packages/api/api/index.ts": {
       "maxDuration": 30
     }
   },
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/index"
+      "destination": "/packages/api/api/index"
     }
   ],
   "env": {
