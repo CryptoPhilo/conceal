@@ -26,12 +26,13 @@ export async function connectedAccountsRoutes(app: FastifyInstance) {
   app.get("/connected-accounts", async (req) => {
     const sql = getDb();
     const userId = (req.user as { sub: string }).sub;
-    return sql`
+    const accounts = await sql`
       SELECT id, provider, email_address, status, last_synced_at, created_at
       FROM connected_accounts
       WHERE user_id = ${userId}
       ORDER BY created_at DESC
     `;
+    return { accounts };
   });
 
   // Add IMAP account
