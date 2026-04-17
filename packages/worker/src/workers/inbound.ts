@@ -1,4 +1,4 @@
-import type { Job } from "bullmq";
+import type { Job, ConnectionOptions } from "bullmq";
 import { Queue } from "bullmq";
 import type { InboundEmailJob, SievedJob } from "@shadow/shared";
 import { QUEUE_NAMES } from "@shadow/shared";
@@ -8,19 +8,19 @@ import { loadUserRules, updateEmailLogSieve } from "../db.js";
 let _sieveQueue: Queue | undefined;
 let _batchQueue: Queue | undefined;
 
-function getSieveQueue(connection: Parameters<typeof Queue>[1]["connection"]) {
+function getSieveQueue(connection: ConnectionOptions) {
   if (!_sieveQueue) _sieveQueue = new Queue(QUEUE_NAMES.SIEVE, { connection });
   return _sieveQueue;
 }
 
-function getBatchQueue(connection: Parameters<typeof Queue>[1]["connection"]) {
+function getBatchQueue(connection: ConnectionOptions) {
   if (!_batchQueue) _batchQueue = new Queue(QUEUE_NAMES.BRAIN_BATCH, { connection });
   return _batchQueue;
 }
 
 export async function processInbound(
   job: Job<InboundEmailJob>,
-  redisConnection: Parameters<typeof Queue>[1]["connection"]
+  redisConnection: ConnectionOptions
 ): Promise<void> {
   const data = job.data;
 

@@ -1,4 +1,4 @@
-import type { Job } from "bullmq";
+import type { Job, ConnectionOptions } from "bullmq";
 import { Queue } from "bullmq";
 import Anthropic from "@anthropic-ai/sdk";
 import type { SievedJob, DeliveryJob } from "@shadow/shared";
@@ -14,7 +14,7 @@ const anthropic = new Anthropic({
 
 let _deliveryQueue: Queue | undefined;
 
-function getDeliveryQueue(connection: Parameters<typeof Queue>[1]["connection"]) {
+function getDeliveryQueue(connection: ConnectionOptions) {
   if (!_deliveryQueue) _deliveryQueue = new Queue(QUEUE_NAMES.DELIVERY, { connection });
   return _deliveryQueue;
 }
@@ -62,15 +62,13 @@ async function runBrain(data: SievedJob): Promise<BrainResult> {
     `Received at: ${data.receivedAt}`;
 
   try {
-    const response = await anthropic.beta.messages.create({
+    const response = await anthropic.beta.promptCaching.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
-      betas: ["prompt-caching-2024-07-31"],
       system: [
         {
           type: "text",
           text: systemPrompt,
-          // @ts-expect-error — beta cache_control field
           cache_control: { type: "ephemeral" },
         },
       ],
@@ -108,7 +106,7 @@ async function runBrain(data: SievedJob): Promise<BrainResult> {
 
 export async function processBrain(
   job: Job<SievedJob>,
-  redisConnection: Parameters<typeof Queue>[1]["connection"]
+  redisConnection: ConnectionOptions
 ): Promise<void> {
   const data = job.data;
 

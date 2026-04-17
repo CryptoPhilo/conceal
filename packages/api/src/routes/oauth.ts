@@ -3,9 +3,9 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { getDb } from "../db.js";
 import { encrypt } from "../lib/crypto.js";
-import IORedis from "ioredis";
+import { Redis } from "ioredis";
 
-const redis = new IORedis(process.env.REDIS_URL ?? "redis://localhost:6379");
+const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379");
 
 const PROVIDERS = {
   gmail: {

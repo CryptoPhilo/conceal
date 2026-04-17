@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { getDb } from "../db.js";
 
 let _redis: Redis | undefined;

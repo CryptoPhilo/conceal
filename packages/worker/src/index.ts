@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import type { InboundEmailJob, SievedJob, DeliveryJob, EmailAnalysisJob } from "@shadow/shared";
 import { QUEUE_NAMES } from "@shadow/shared";
 import { processInbound } from "./workers/inbound.js";

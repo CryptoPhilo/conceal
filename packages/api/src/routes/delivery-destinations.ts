@@ -43,7 +43,7 @@ export async function deliveryDestinationsRoutes(app: FastifyInstance) {
       Array<{ id: string; type: string; active: boolean; created_at: Date }>
     >`
       INSERT INTO delivery_destinations (user_id, type, config_enc)
-      VALUES (${userId}, ${body.type}, ${sql.json(body.config as Record<string, unknown>)})
+      VALUES (${userId}, ${body.type}, ${sql.json(body.config as Record<string, string>)})
       RETURNING id, type, active, created_at
     `;
     return reply.status(201).send(row);
@@ -59,7 +59,7 @@ export async function deliveryDestinationsRoutes(app: FastifyInstance) {
 
       const updates: Record<string, unknown> = {};
       if (body.active !== undefined) updates["active"] = body.active;
-      if (body.config !== undefined) updates["config_enc"] = sql.json(body.config);
+      if (body.config !== undefined) updates["config_enc"] = sql.json(body.config as Record<string, string>);
 
       if (Object.keys(updates).length === 0) {
         return reply.status(400).send({ error: "no_fields" });

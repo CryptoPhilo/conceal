@@ -1,4 +1,4 @@
-import type { Job } from "bullmq";
+import type { Job, ConnectionOptions } from "bullmq";
 import { Queue } from "bullmq";
 import type { SievedJob } from "@shadow/shared";
 import { QUEUE_NAMES } from "@shadow/shared";
@@ -15,12 +15,12 @@ interface SieveServiceResponse {
 let _brainQueue: Queue | undefined;
 let _batchQueue: Queue | undefined;
 
-function getBrainQueue(connection: Parameters<typeof Queue>[1]["connection"]) {
+function getBrainQueue(connection: ConnectionOptions) {
   if (!_brainQueue) _brainQueue = new Queue(QUEUE_NAMES.BRAIN, { connection });
   return _brainQueue;
 }
 
-function getBatchQueue(connection: Parameters<typeof Queue>[1]["connection"]) {
+function getBatchQueue(connection: ConnectionOptions) {
   if (!_batchQueue) _batchQueue = new Queue(QUEUE_NAMES.BRAIN_BATCH, { connection });
   return _batchQueue;
 }
@@ -53,7 +53,7 @@ async function callSieveService(
 
 export async function processSieveL2(
   job: Job<SievedJob>,
-  redisConnection: Parameters<typeof Queue>[1]["connection"]
+  redisConnection: ConnectionOptions
 ): Promise<void> {
   const data = job.data;
 
