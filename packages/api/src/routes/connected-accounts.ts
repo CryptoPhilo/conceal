@@ -27,7 +27,7 @@ export async function connectedAccountsRoutes(app: FastifyInstance) {
     const sql = getDb();
     const userId = (req.user as { sub: string }).sub;
     const accounts = await sql`
-      SELECT id, provider, email_address, status, last_synced_at, created_at
+      SELECT id, provider, email_address AS email, status, last_synced_at, created_at
       FROM connected_accounts
       WHERE user_id = ${userId}
       ORDER BY created_at DESC
