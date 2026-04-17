@@ -1,0 +1,26 @@
+{
+  "_comment": "AWS SES receipt rule set configuration. Apply via AWS CLI or Console.",
+  "RuleSetName": "shadow-inbound",
+  "Rule": {
+    "Name": "shadow-inbound-all",
+    "Enabled": true,
+    "TlsPolicy": "Require",
+    "Recipients": [],
+    "Actions": [
+      {
+        "S3Action": {
+          "BucketName": "${SES_BUCKET_NAME}",
+          "ObjectKeyPrefix": "emails/",
+          "TopicArn": "${SNS_TOPIC_ARN}"
+        }
+      },
+      {
+        "LambdaAction": {
+          "FunctionArn": "${INGRESS_LAMBDA_ARN}",
+          "InvocationType": "Event"
+        }
+      }
+    ],
+    "ScanEnabled": false
+  }
+}

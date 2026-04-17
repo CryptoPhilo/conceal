@@ -1,0 +1,25 @@
+{
+  "name": "@shadow/api",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@shadow/shared": "*",
+    "fastify": "^4.26.2",
+    "@fastify/jwt": "^8.0.1",
+    "nanoid": "^5.0.7",
+    "postgres": "^3.4.4",
+    "zod": "^3.23.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "tsx": "^4.8.2",
+    "typescript": "^5.4.5"
+  }
+}

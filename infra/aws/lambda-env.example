@@ -1,0 +1,5 @@
+DATABASE_URL=postgresql://postgres:password@db.supabase.co:5432/postgres
+REDIS_URL=rediss://:<token>@your-redis.cache.amazonaws.com:6380
+SES_BUCKET_NAME=shadow-ses-inbound
+BOUNCE_FROM_ADDRESS=noreply@shadow.yourdomain.com
+AWS_REGION=us-east-1

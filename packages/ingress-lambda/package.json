@@ -1,0 +1,23 @@
+{
+  "name": "@shadow/ingress-lambda",
+  "version": "0.1.0",
+  "main": "dist/handler.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "package": "npm run build && cd dist && zip -r ../lambda.zip ."
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.540.0",
+    "@aws-sdk/client-ses": "^3.540.0",
+    "@shadow/shared": "*",
+    "bullmq": "^5.7.0",
+    "ioredis": "^5.3.2",
+    "postgres": "^3.4.4"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.136",
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}
