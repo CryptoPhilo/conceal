@@ -138,14 +138,14 @@ describe("Sieve L1 classify (pure function)", () => {
 
 describe("BullMQ queue round-trip", () => {
   it("enqueues and dequeues a test job", async () => {
-    const testQueue = new Queue("integration:test", {
+    const testQueue = new Queue("integration-test", {
       connection: redis as any,
     });
 
     const received: unknown[] = [];
 
     const worker = new Worker(
-      "integration:test",
+      "integration-test",
       async (job: Job) => {
         received.push(job.data);
       },
