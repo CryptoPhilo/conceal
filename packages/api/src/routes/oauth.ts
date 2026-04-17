@@ -77,7 +77,7 @@ export async function oauthRoutes(app: FastifyInstance) {
         if (!v) params.delete(k);
       }
 
-      return { redirect_url: `${cfg.authUrl}?${params.toString()}` };
+      return { url: `${cfg.authUrl}?${params.toString()}` };
     }
   );
 
