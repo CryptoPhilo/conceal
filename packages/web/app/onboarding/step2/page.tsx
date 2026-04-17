@@ -120,7 +120,7 @@ export default function Step2() {
             ← 이전
           </button>
           <button
-            onClick={() => router.push('/onboarding/step3')}
+            onClick={() => router.push('/dashboard')}
             className="flex-[2] py-3 px-6 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold transition-colors"
           >
             다음 →

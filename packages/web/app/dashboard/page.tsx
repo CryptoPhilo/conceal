@@ -5,6 +5,22 @@ import Link from 'next/link';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://conceal-omega.vercel.app';
 
+const IOS_STEPS = [
+  '아이폰 설정 앱을 엽니다',
+  '아래로 스크롤하여 "Mail" 탭합니다',
+  '"계정" → "계정 추가"를 탭합니다',
+  '"기타" → "Mail 계정 추가"를 선택합니다',
+  '마스킹 주소와 앱 비밀번호를 입력합니다',
+];
+
+const ANDROID_STEPS = [
+  'Gmail 앱 또는 설정 앱을 엽니다',
+  '"계정 관리" → "계정 추가"를 탭합니다',
+  '"이메일" → "기타"를 선택합니다',
+  '마스킹 주소와 앱 비밀번호를 입력합니다',
+  'IMAP 서버: imap.conceal.app, 포트: 993을 입력합니다',
+];
+
 interface DigestItem {
   subject: string;
   from: string;
@@ -28,6 +44,8 @@ export default function Dashboard() {
   const [masks, setMasks] = useState<MaskAddr[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
+  const [platform, setPlatform] = useState<'ios' | 'android'>('ios');
+  const [setupOpen, setSetupOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('conceal_token');
@@ -50,6 +68,9 @@ export default function Dashboard() {
     setCopied(text);
     setTimeout(() => setCopied(null), 2000);
   }
+
+  const maskAddr = masks[0]?.address;
+  const steps = platform === 'ios' ? IOS_STEPS : ANDROID_STEPS;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -119,6 +140,67 @@ export default function Dashboard() {
                     </span>
                   </button>
                 ))}
+              </section>
+            )}
+
+            {/* Smartphone setup guide */}
+            {accounts.length > 0 && (
+              <section className="space-y-3">
+                <button
+                  onClick={() => setSetupOpen(o => !o)}
+                  className="w-full flex items-center justify-between bg-gray-900 hover:bg-gray-800 rounded-xl px-4 py-4 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">📱</span>
+                    <div className="text-left">
+                      <div className="font-medium text-sm">스마트폰 이메일 설정</div>
+                      <div className="text-xs text-gray-500 mt-0.5">iOS / Android 기기에서 Conceal 사용하기</div>
+                    </div>
+                  </div>
+                  <span className="text-gray-500 text-sm">{setupOpen ? '▲' : '▼'}</span>
+                </button>
+
+                {setupOpen && (
+                  <div className="bg-gray-900 rounded-xl p-4 space-y-4">
+                    <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
+                      {(['ios', 'android'] as const).map(p => (
+                        <button
+                          key={p}
+                          onClick={() => setPlatform(p)}
+                          className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${platform === p ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                        >
+                          {p === 'ios' ? '📱 iOS' : '🤖 Android'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {maskAddr && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs text-gray-400">마스킹 주소 (탭하여 복사)</p>
+                        <button
+                          onClick={() => copy(maskAddr)}
+                          className="w-full text-left font-mono text-indigo-300 bg-gray-800 rounded-lg px-3 py-2 text-sm hover:bg-gray-700 transition-colors flex items-center justify-between"
+                        >
+                          <span className="truncate">{maskAddr}</span>
+                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                            {copied === maskAddr ? '✓ 복사됨' : '복사'}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+
+                    <ol className="space-y-2.5">
+                      {steps.map((step, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <span className="w-5 h-5 rounded-full bg-gray-800 border border-gray-700 flex-shrink-0 flex items-center justify-center text-xs font-bold text-indigo-400">
+                            {i + 1}
+                          </span>
+                          <span className="text-sm text-gray-300 pt-0.5">{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
               </section>
             )}
 

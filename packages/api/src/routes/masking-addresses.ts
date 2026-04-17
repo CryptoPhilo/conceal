@@ -12,12 +12,13 @@ export async function maskingAddressRoutes(app: FastifyInstance) {
   app.get("/masking-addresses", async (req) => {
     const sql = getDb();
     const userId = (req.user as { sub: string }).sub;
-    return sql`
+    const addresses = await sql`
       SELECT id, address, label, active, created_at
       FROM masking_addresses
       WHERE user_id = ${userId}
       ORDER BY created_at DESC
     `;
+    return { addresses };
   });
 
   app.post("/masking-addresses", async (req, reply) => {
