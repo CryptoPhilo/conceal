@@ -60,6 +60,15 @@ export interface InboundEmailJob {
 
 export type InboundEmailJobStatus = "pending" | "sieving" | "brain" | "delivered" | "dropped";
 
+export type SievedJob = InboundEmailJob & { sieveLabel: string | null; sieveAction: string };
+
+export type DeliveryJob = SievedJob & {
+  summary: string;
+  priorityScore: number;
+  brainAction: "deliver" | "reply";
+  replyDraft?: string;
+};
+
 export type SieveAction = "pass_through" | "quarantine" | "auto_delete";
 
 export interface SieveResult {

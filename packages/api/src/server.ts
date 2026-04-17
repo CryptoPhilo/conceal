@@ -3,6 +3,9 @@ import fastifyJwt from "@fastify/jwt";
 import { maskingAddressRoutes } from "./routes/masking-addresses.js";
 import { filterRulesRoutes } from "./routes/filter-rules.js";
 import { internalRoutes } from "./routes/internal.js";
+import { deliveryDestinationsRoutes } from "./routes/delivery-destinations.js";
+import { emailLogRoutes } from "./routes/email-log.js";
+import { digestRoutes } from "./routes/digest.js";
 
 const app = Fastify({ logger: true });
 
@@ -19,6 +22,9 @@ app.decorate("authenticate", async function (req: Parameters<typeof app.authenti
 app.register(maskingAddressRoutes, { prefix: "/v1" });
 app.register(filterRulesRoutes, { prefix: "/v1" });
 app.register(internalRoutes, { prefix: "/v1" });
+app.register(deliveryDestinationsRoutes, { prefix: "/v1" });
+app.register(emailLogRoutes, { prefix: "/v1" });
+app.register(digestRoutes, { prefix: "/v1" });
 
 app.get("/health", async () => ({ ok: true }));
 
