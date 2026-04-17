@@ -22,7 +22,7 @@ vi.mock("../db.js", () => ({
 
 vi.mock("@anthropic-ai/sdk", () => {
   class Anthropic {
-    beta = { messages: { create: createMessageMock } };
+    beta = { promptCaching: { messages: { create: createMessageMock } } };
   }
   return { default: Anthropic };
 });
