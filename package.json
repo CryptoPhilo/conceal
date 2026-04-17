@@ -1,6 +1,7 @@
 {
   "name": "shadow-email",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
