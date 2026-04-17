@@ -48,8 +48,28 @@ export interface InboundEmailJob {
   userId: string;
   senderHash: string;
   subjectHash: string;
+  /** Sender domain extracted from envelope From header — ephemeral, never stored in DB */
+  senderDomain: string;
+  /** Local part of the sender address (before @) — ephemeral, never stored in DB */
+  senderLocalPart: string;
+  /** Email subject — ephemeral in Redis (TTL 5 min), never stored in DB */
+  subject: string;
   rawS3Key: string;
   receivedAt: string;
 }
 
 export type InboundEmailJobStatus = "pending" | "sieving" | "brain" | "delivered" | "dropped";
+
+export type SieveAction = "pass_through" | "quarantine" | "auto_delete";
+
+export interface SieveResult {
+  action: SieveAction;
+  /** Human-readable label stored in email_log.sieve_label */
+  label: string | null;
+  /** DB rule id that triggered this result, or null for built-in defaults */
+  matchedRuleId: string | null;
+  /** Reply template body, only set when action is pass_through and a reply rule fired */
+  replyTemplate: string | null;
+  /** Whether this email should jump to the priority Brain queue */
+  priority: boolean;
+}

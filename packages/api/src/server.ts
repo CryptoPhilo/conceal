@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import fastifyJwt from "@fastify/jwt";
 import { maskingAddressRoutes } from "./routes/masking-addresses.js";
+import { filterRulesRoutes } from "./routes/filter-rules.js";
 import { internalRoutes } from "./routes/internal.js";
 
 const app = Fastify({ logger: true });
@@ -16,6 +17,7 @@ app.decorate("authenticate", async function (req: Parameters<typeof app.authenti
 });
 
 app.register(maskingAddressRoutes, { prefix: "/v1" });
+app.register(filterRulesRoutes, { prefix: "/v1" });
 app.register(internalRoutes, { prefix: "/v1" });
 
 app.get("/health", async () => ({ ok: true }));

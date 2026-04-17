@@ -73,6 +73,7 @@ async function routeRecipient(
 
   const senderHash = sha256(originalFrom);
   const subjectHash = sha256(subject);
+  const { domain: senderDomain, localPart: senderLocalPart } = extractSenderParts(originalFrom);
 
   await insertEmailLog({
     userId: row.user_id,
@@ -90,6 +91,9 @@ async function routeRecipient(
     userId: row.user_id,
     senderHash,
     subjectHash,
+    senderDomain,
+    senderLocalPart,
+    subject,
     rawS3Key,
     receivedAt: new Date().toISOString(),
   };
@@ -100,6 +104,13 @@ async function routeRecipient(
     attempts: 3,
     backoff: { type: "exponential", delay: 2000 },
   });
+}
+
+function extractSenderParts(fromHeader: string): { domain: string; localPart: string } {
+  const match = fromHeader.match(/<([^>]+)>/) ?? fromHeader.match(/(\S+@\S+)/);
+  const email = (match?.[1] ?? fromHeader).toLowerCase();
+  const [localPart, domain] = email.split("@");
+  return { domain: domain ?? "unknown", localPart: localPart ?? "unknown" };
 }
 
 async function deleteFromS3(key: string) {
