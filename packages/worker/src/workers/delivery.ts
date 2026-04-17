@@ -1,7 +1,11 @@
 import type { Job } from "bullmq";
 import type { Redis } from "ioredis";
 import type { DeliveryJob } from "@shadow/shared";
-import { loadDeliveryDestinations, markEmailDelivered } from "../db.js";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { loadDeliveryDestinations, loadUserEmail, markEmailDelivered } from "../db.js";
+
+const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
+const NOTIFY_FROM = process.env.NOTIFY_FROM_ADDRESS ?? process.env.BOUNCE_FROM_ADDRESS ?? "noreply@shadow.yourdomain.com";
 
 const DIGEST_TTL_SECONDS = 86400;
 
@@ -15,11 +19,14 @@ interface NotionConfig {
 }
 
 interface EmailDigestConfig {
-  // no extra config needed beyond userId
   [key: string]: unknown;
 }
 
-type DestinationConfig = SlackConfig | NotionConfig | EmailDigestConfig;
+interface EmailConfig {
+  [key: string]: unknown;
+}
+
+type DestinationConfig = SlackConfig | NotionConfig | EmailDigestConfig | EmailConfig;
 
 async function deliverToSlack(
   config: SlackConfig,
@@ -95,6 +102,36 @@ async function deliverToEmailDigest(
   }
 }
 
+async function deliverToEmail(
+  toAddress: string,
+  subject: string,
+  summary: string,
+  priorityScore: number,
+  job: Job<DeliveryJob>
+): Promise<void> {
+  try {
+    await ses.send(
+      new SendEmailCommand({
+        Source: NOTIFY_FROM,
+        Destination: { ToAddresses: [toAddress] },
+        Message: {
+          Subject: { Data: `[Shadow] ${subject}` },
+          Body: {
+            Text: {
+              Data: `Priority: ${priorityScore}/100\n\n${summary}`,
+            },
+            Html: {
+              Data: `<p><strong>Priority:</strong> ${priorityScore}/100</p><p>${summary.replace(/\n/g, "<br>")}</p>`,
+            },
+          },
+        },
+      })
+    );
+  } catch (err) {
+    job.log(`[delivery] email send failed: ${String(err)}`);
+  }
+}
+
 export async function processDelivery(
   job: Job<DeliveryJob>,
   redis: Redis
@@ -111,6 +148,8 @@ export async function processDelivery(
   } catch (err) {
     job.log(`[delivery] warn: loadDeliveryDestinations failed: ${String(err)}`);
   }
+
+  let userEmail: string | null = null;
 
   job.log(`[delivery] found ${destinations.length} active destination(s)`);
 
@@ -141,6 +180,22 @@ export async function processDelivery(
       case "email_digest": {
         await deliverToEmailDigest(redis, data.userId, data.summary, job);
         job.log(`[delivery] pushed to email_digest digest:${data.userId}`);
+        break;
+      }
+      case "email": {
+        if (!userEmail) {
+          try {
+            userEmail = await loadUserEmail(data.userId);
+          } catch (err) {
+            job.log(`[delivery] warn: loadUserEmail failed: ${String(err)}`);
+          }
+        }
+        if (userEmail) {
+          await deliverToEmail(userEmail, data.subject, data.summary, data.priorityScore, job);
+          job.log(`[delivery] sent email to user dest=${dest.id}`);
+        } else {
+          job.log(`[delivery] email dest=${dest.id} — no registered email for user, skipping`);
+        }
         break;
       }
       default:

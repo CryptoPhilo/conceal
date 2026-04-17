@@ -101,6 +101,14 @@ export async function loadDeliveryDestinations(userId: string): Promise<
   return rows.map((r) => ({ id: r.id, type: r.type, configEnc: r.config_enc }));
 }
 
+export async function loadUserEmail(userId: string): Promise<string | null> {
+  const sql = getDb();
+  const rows = await sql<Array<{ email: string }>>`
+    SELECT email FROM users WHERE id = ${userId} LIMIT 1
+  `;
+  return rows[0]?.email ?? null;
+}
+
 export async function markEmailDelivered(
   senderHash: string,
   subjectHash: string,
