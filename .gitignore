@@ -1,0 +1,10 @@
+.vercel
+node_modules/
+dist/
+*.js.map
+*.d.ts.map
+coverage/
+.pytest_cache/
+__pycache__/
+*.pyc
+lambda.zip

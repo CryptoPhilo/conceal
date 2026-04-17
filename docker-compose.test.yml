@@ -1,0 +1,48 @@
+version: "3.9"
+
+# Integration test environment — starts Redis + Postgres + sieve-service.
+# Usage: docker-compose -f docker-compose.test.yml up -d
+#        npm run test:integration  (from repo root)
+#        docker-compose -f docker-compose.test.yml down -v
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: shadow
+      POSTGRES_PASSWORD: shadow_test
+      POSTGRES_DB: shadow_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./infra/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-ENV", "pg_isready", "-U", "shadow"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  sieve-service:
+    build:
+      context: ./packages/sieve-service
+      dockerfile: Dockerfile.test
+    ports:
+      - "8001:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      redis:
+        condition: service_healthy

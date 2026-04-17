@@ -1,15 +1,23 @@
 {
   "name": "shadow-email",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build --workspaces",
     "dev": "concurrently \"npm run dev -w packages/api\" \"npm run dev -w packages/worker\"",
     "test": "npm test --workspaces --if-present",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration:up": "docker-compose -f docker-compose.test.yml up -d",
+    "test:integration:down": "docker-compose -f docker-compose.test.yml down -v",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
+    "bullmq": "^5.74.1",
     "concurrently": "^8.2.2",
-    "typescript": "^5.4.5"
+    "ioredis": "^5.10.1",
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.4"
   }
 }
