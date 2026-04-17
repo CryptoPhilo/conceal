@@ -10,7 +10,7 @@ const PROVIDERS = {
   gmail: {
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
-    scopes: "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify",
+    scopes: "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify email openid",
     clientId: () => process.env.GOOGLE_CLIENT_ID ?? "",
     clientSecret: () => process.env.GOOGLE_CLIENT_SECRET ?? "",
   },
@@ -180,7 +180,13 @@ async function fetchEmailFromProvider(provider: Provider, accessToken: string): 
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = (await r.json()) as { email?: string };
-      return data.email ?? "";
+      if (data.email) return data.email;
+      // Fallback: Gmail API profile
+      const r2 = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data2 = (await r2.json()) as { emailAddress?: string };
+      return data2.emailAddress ?? "";
     }
     if (provider === "outlook") {
       const r = await fetch("https://graph.microsoft.com/v1.0/me", {
