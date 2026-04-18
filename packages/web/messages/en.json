@@ -1,0 +1,72 @@
+{
+  "home": {
+    "title": "Conceal",
+    "tagline": "A service that helps you stop seeing emails.\nBreak free from your inbox.",
+    "cta_start": "Get Started",
+    "cta_dashboard": "Go to Dashboard",
+    "privacy_note": "🔒 Read-only access only"
+  },
+  "onboarding": {
+    "step1": {
+      "title": "Connect your email account",
+      "privacy_note": "🔒 Read-only access only",
+      "gmail": "Continue with Google (Gmail)",
+      "outlook": "Microsoft (Outlook)",
+      "imap_other": "Other email (IMAP setup) →",
+      "connecting": "Connecting...",
+      "error_default": "Connection failed",
+      "imap": {
+        "email": "Email address",
+        "password": "App password",
+        "host": "IMAP server (optional)",
+        "port": "Port (optional)",
+        "submit": "Connect via IMAP",
+        "back": "← Go back"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Conceal",
+    "add_account": "+ Add account",
+    "stats": {
+      "accounts": "Connected accounts",
+      "masks": "Masking addresses",
+      "digest": "Today's summary"
+    },
+    "accounts_section": "Connected accounts",
+    "account_active": "Active",
+    "masks_section": "Masking addresses",
+    "new_mask": "+ New address",
+    "creating_mask": "Creating...",
+    "no_masks": "No masking addresses yet. Click \"+ New address\" to create one.",
+    "copy": "Copy",
+    "copied": "✓ Copied",
+    "selected": "Selected",
+    "smartphone_setup": "Smartphone email setup",
+    "smartphone_subtitle": "Use Conceal on your iOS / Android device",
+    "mask_copy_hint_single": " (tap to copy)",
+    "mask_copy_hint_multi": " (select then copy)",
+    "masking_address": "Masking address",
+    "digest_section": "Today's digest",
+    "digest_empty": "No emails processed today",
+    "no_accounts": "No connected accounts yet",
+    "connect_email": "Connect email",
+    "ios_steps": [
+      "Open the iPhone Settings app",
+      "Scroll down and tap \"Mail\"",
+      "Tap \"Accounts\" → \"Add Account\"",
+      "Select \"Other\" → \"Add Mail Account\"",
+      "Enter your masking address and app password"
+    ],
+    "android_steps": [
+      "Open the Gmail app or Settings app",
+      "Tap \"Manage accounts\" → \"Add account\"",
+      "Select \"Email\" → \"Other\"",
+      "Enter your masking address and app password",
+      "Enter IMAP server: imap.conceal.app, port: 993"
+    ]
+  },
+  "common": {
+    "loading": "Loading..."
+  }
+}

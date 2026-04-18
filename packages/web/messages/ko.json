@@ -1,0 +1,72 @@
+{
+  "home": {
+    "title": "Conceal",
+    "tagline": "이메일을 안 보게 도와주는 서비스.\n받은 편지함에서 자유로워지세요.",
+    "cta_start": "시작하기",
+    "cta_dashboard": "대시보드로 이동",
+    "privacy_note": "🔒 읽기 전용 권한만 요청합니다"
+  },
+  "onboarding": {
+    "step1": {
+      "title": "이메일 계정을 연결해 주세요",
+      "privacy_note": "🔒 읽기 전용 권한만 요청합니다",
+      "gmail": "Google (Gmail)로 계속",
+      "outlook": "Microsoft (Outlook)",
+      "imap_other": "다른 이메일 (IMAP 설정) →",
+      "connecting": "연결 중...",
+      "error_default": "연결 실패",
+      "imap": {
+        "email": "이메일 주소",
+        "password": "앱 비밀번호",
+        "host": "IMAP 서버 (선택)",
+        "port": "포트 (선택)",
+        "submit": "IMAP으로 연결",
+        "back": "← 돌아가기"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Conceal",
+    "add_account": "+ 계정 추가",
+    "stats": {
+      "accounts": "연결된 계정",
+      "masks": "마스킹 주소",
+      "digest": "오늘 요약"
+    },
+    "accounts_section": "연결된 계정",
+    "account_active": "활성",
+    "masks_section": "마스킹 주소",
+    "new_mask": "+ 새 주소",
+    "creating_mask": "생성 중...",
+    "no_masks": "아직 마스킹 주소가 없습니다. \"+ 새 주소\"를 눌러 생성하세요.",
+    "copy": "복사",
+    "copied": "✓ 복사됨",
+    "selected": "선택됨",
+    "smartphone_setup": "스마트폰 이메일 설정",
+    "smartphone_subtitle": "iOS / Android 기기에서 Conceal 사용하기",
+    "mask_copy_hint_single": " (탭하여 복사)",
+    "mask_copy_hint_multi": " (선택 후 복사)",
+    "masking_address": "마스킹 주소",
+    "digest_section": "오늘 다이제스트",
+    "digest_empty": "오늘 처리된 이메일이 없습니다",
+    "no_accounts": "아직 연결된 계정이 없습니다",
+    "connect_email": "이메일 연결하기",
+    "ios_steps": [
+      "아이폰 설정 앱을 엽니다",
+      "아래로 스크롤하여 \"Mail\" 탭합니다",
+      "\"계정\" → \"계정 추가\"를 탭합니다",
+      "\"기타\" → \"Mail 계정 추가\"를 선택합니다",
+      "마스킹 주소와 앱 비밀번호를 입력합니다"
+    ],
+    "android_steps": [
+      "Gmail 앱 또는 설정 앱을 엽니다",
+      "\"계정 관리\" → \"계정 추가\"를 탭합니다",
+      "\"이메일\" → \"기타\"를 선택합니다",
+      "마스킹 주소와 앱 비밀번호를 입력합니다",
+      "IMAP 서버: imap.conceal.app, 포트: 993을 입력합니다"
+    ]
+  },
+  "common": {
+    "loading": "로딩 중..."
+  }
+}
