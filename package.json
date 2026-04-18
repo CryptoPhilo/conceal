@@ -17,6 +17,9 @@
     "translate:en": "node scripts/translate-messages.mjs --source ko --target en",
     "translate:legal": "node scripts/translate-legal.mjs --source en --target ko"
   },
+  "dependencies": {
+    "postgres": "^3.4.4"
+  },
   "devDependencies": {
     "bullmq": "^5.74.1",
     "concurrently": "^8.2.2",
