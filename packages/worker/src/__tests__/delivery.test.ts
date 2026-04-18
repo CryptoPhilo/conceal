@@ -5,6 +5,7 @@ import type { DeliveryJob } from "@shadow/shared";
 vi.mock("../db.js", () => ({
   loadDeliveryDestinations: vi.fn().mockResolvedValue([]),
   markEmailDelivered: vi.fn().mockResolvedValue(undefined),
+  loadUserLocale: vi.fn().mockResolvedValue("ko"),
 }));
 
 const { processDelivery } = await import("../workers/delivery.js");
@@ -23,6 +24,8 @@ function makeJob(overrides: Partial<DeliveryJob> = {}): Job<DeliveryJob> {
     subject: "Test email",
     rawS3Key: "emails/msg-001",
     receivedAt: new Date().toISOString(),
+    toAddresses: ["mask@shadow.com"],
+    ccAddresses: [],
     sieveLabel: "normal",
     sieveAction: "pass_through",
     summary: "Test email summary",

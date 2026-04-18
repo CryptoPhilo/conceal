@@ -55,14 +55,38 @@ export async function updateEmailLogBrain(
   userId: string,
   summary: string,
   priorityScore: number,
-  actionTaken: "drop" | "delivered" | "replied" | "batched" | "bounced"
+  actionTaken: "drop" | "delivered" | "replied" | "batched" | "bounced",
+  informationalCategory: string,
+  workTypes: string[]
 ) {
   const sql = getDb();
   await sql`
     UPDATE email_log
     SET summary = ${summary},
         priority_score = ${priorityScore},
-        action_taken = ${actionTaken}
+        action_taken = ${actionTaken},
+        informational_category = ${informationalCategory},
+        work_types = ${sql.array(workTypes)}
+    WHERE sender_hash = ${senderHash}
+      AND subject_hash = ${subjectHash}
+      AND user_id = ${userId}
+      AND received_at >= now() - interval '10 minutes'
+    LIMIT 1
+  `;
+}
+
+export async function updateEmailLogPhase3(
+  senderHash: string,
+  subjectHash: string,
+  userId: string,
+  recipientType: string,
+  recipientConfidence: number
+) {
+  const sql = getDb();
+  await sql`
+    UPDATE email_log
+    SET recipient_type = ${recipientType},
+        recipient_confidence = ${recipientConfidence}
     WHERE sender_hash = ${senderHash}
       AND subject_hash = ${subjectHash}
       AND user_id = ${userId}

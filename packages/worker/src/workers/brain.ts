@@ -5,8 +5,11 @@ import type { SievedJob, DeliveryJob } from "@shadow/shared";
 import { QUEUE_NAMES } from "@shadow/shared";
 import {
   updateEmailLogBrain,
+  updateEmailLogPhase3,
   loadUserContextVectors,
 } from "../db.js";
+import { classifyPhase2 } from "../classifier-phase2.js";
+import { classifyPhase3 } from "../classifier-phase3.js";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -112,25 +115,49 @@ export async function processBrain(
 
   job.log(`[brain] processing — sieveLabel=${data.sieveLabel ?? "none"}`);
 
-  const result = await runBrain(data);
+  const [result, phase2, phase3] = await Promise.all([
+    runBrain(data),
+    classifyPhase2(data.subject, data.senderDomain, data.senderLocalPart, data.sieveLabel),
+    Promise.resolve(classifyPhase3(data.maskingAddress, data.toAddresses ?? [], data.ccAddresses ?? [])),
+  ]);
 
   job.log(
     `[brain] result — action=${result.action} score=${result.priorityScore} ` +
       `summary="${result.summary.slice(0, 80)}"`
   );
+  job.log(
+    `[brain] phase2 — category=${phase2.informationalCategory} ` +
+      `confidence=${phase2.informationalConfidence.toFixed(2)} ` +
+      `workTypes=${phase2.workTypes.join(",")}`
+  );
+  job.log(
+    `[brain] phase3 — recipientType=${phase3.recipientType} ` +
+      `confidence=${phase3.confidence.toFixed(2)}`
+  );
 
   const dbAction = result.action === "reply" ? "replied" : "delivered";
   try {
-    await updateEmailLogBrain(
-      data.senderHash,
-      data.subjectHash,
-      data.userId,
-      result.summary,
-      result.priorityScore,
-      dbAction
-    );
+    await Promise.all([
+      updateEmailLogBrain(
+        data.senderHash,
+        data.subjectHash,
+        data.userId,
+        result.summary,
+        result.priorityScore,
+        dbAction,
+        phase2.informationalCategory,
+        phase2.workTypes
+      ),
+      updateEmailLogPhase3(
+        data.senderHash,
+        data.subjectHash,
+        data.userId,
+        phase3.recipientType,
+        phase3.confidence
+      ),
+    ]);
   } catch (err) {
-    job.log(`[brain] warn: updateEmailLogBrain failed: ${String(err)}`);
+    job.log(`[brain] warn: updateEmailLog failed: ${String(err)}`);
   }
 
   const deliveryPayload: DeliveryJob = {
@@ -139,6 +166,8 @@ export async function processBrain(
     priorityScore: result.priorityScore,
     brainAction: result.action,
     ...(result.replyDraft ? { replyDraft: result.replyDraft } : {}),
+    informationalCategory: phase2.informationalCategory,
+    workTypes: phase2.workTypes,
   };
 
   const dq = getDeliveryQueue(redisConnection);

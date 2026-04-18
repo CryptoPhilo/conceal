@@ -56,17 +56,33 @@ export interface InboundEmailJob {
   subject: string;
   rawS3Key: string;
   receivedAt: string;
+  /** To header addresses — ephemeral, used for Phase 3 recipient classification */
+  toAddresses: string[];
+  /** CC header addresses — ephemeral, used for Phase 3 recipient classification */
+  ccAddresses: string[];
+}
+
+export type RecipientType = "direct_to" | "cc" | "team_group" | "unknown";
+
+export interface Phase3Result {
+  recipientType: RecipientType;
+  confidence: number;
 }
 
 export type InboundEmailJobStatus = "pending" | "sieving" | "brain" | "delivered" | "dropped";
 
 export type SievedJob = InboundEmailJob & { sieveLabel: string | null; sieveAction: string };
 
+export type InformationalCategory = "informational" | "action_required" | "uncertain";
+export type WorkType = "contract" | "meeting" | "cs" | "report" | "hiring" | "payment" | "other";
+
 export type DeliveryJob = SievedJob & {
   summary: string;
   priorityScore: number;
   brainAction: "deliver" | "reply";
   replyDraft?: string;
+  informationalCategory: InformationalCategory;
+  workTypes: WorkType[];
 };
 
 export interface EmailAnalysisJob {

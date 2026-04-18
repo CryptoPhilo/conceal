@@ -6,7 +6,16 @@ import type { SievedJob } from "@shadow/shared";
 const addMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const createMessageMock = vi.hoisted(() => vi.fn());
 const updateEmailLogBrainMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const updateEmailLogPhase3Mock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const loadUserContextVectorsMock = vi.hoisted(() => vi.fn().mockResolvedValue([]));
+const classifyPhase2Mock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({
+    informationalCategory: "action_required",
+    informationalConfidence: 0.88,
+    workTypes: ["meeting"],
+    workTypeConfidences: { meeting: 0.88 },
+  })
+);
 
 vi.mock("bullmq", () => {
   class Queue {
@@ -17,6 +26,7 @@ vi.mock("bullmq", () => {
 
 vi.mock("../db.js", () => ({
   updateEmailLogBrain: updateEmailLogBrainMock,
+  updateEmailLogPhase3: updateEmailLogPhase3Mock,
   loadUserContextVectors: loadUserContextVectorsMock,
 }));
 
@@ -26,6 +36,10 @@ vi.mock("@anthropic-ai/sdk", () => {
   }
   return { default: Anthropic };
 });
+
+vi.mock("../classifier-phase2.js", () => ({
+  classifyPhase2: classifyPhase2Mock,
+}));
 
 const { processBrain } = await import("../workers/brain.js");
 
@@ -42,6 +56,8 @@ function makeSievedJob(overrides: Partial<SievedJob> = {}): Job<SievedJob> {
     subject: "Meeting tomorrow",
     rawS3Key: "emails/msg-001",
     receivedAt: new Date().toISOString(),
+    toAddresses: ["mask@shadow.com"],
+    ccAddresses: [],
     sieveLabel: "normal",
     sieveAction: "pass_through",
     ...overrides,
@@ -64,7 +80,14 @@ beforeEach(() => {
   vi.clearAllMocks();
   addMock.mockResolvedValue(undefined);
   updateEmailLogBrainMock.mockResolvedValue(undefined);
+  updateEmailLogPhase3Mock.mockResolvedValue(undefined);
   loadUserContextVectorsMock.mockResolvedValue([]);
+  classifyPhase2Mock.mockResolvedValue({
+    informationalCategory: "action_required",
+    informationalConfidence: 0.88,
+    workTypes: ["meeting"],
+    workTypeConfidences: { meeting: 0.88 },
+  });
 });
 
 describe("processBrain — valid Claude response", () => {
@@ -80,7 +103,9 @@ describe("processBrain — valid Claude response", () => {
       "abc", "def", "user-1",
       "Meeting request from John",
       72,
-      "delivered"
+      "delivered",
+      "action_required",
+      ["meeting"]
     );
 
     expect(addMock).toHaveBeenCalledWith(
@@ -89,6 +114,8 @@ describe("processBrain — valid Claude response", () => {
         summary: "Meeting request from John",
         priorityScore: 72,
         brainAction: "deliver",
+        informationalCategory: "action_required",
+        workTypes: ["meeting"],
       }),
       expect.any(Object)
     );
@@ -109,7 +136,8 @@ describe("processBrain — valid Claude response", () => {
 
     expect(updateEmailLogBrainMock).toHaveBeenCalledWith(
       expect.any(String), expect.any(String), expect.any(String),
-      "Vendor wants a meeting", 30, "replied"
+      "Vendor wants a meeting", 30, "replied",
+      "action_required", ["meeting"]
     );
 
     expect(addMock).toHaveBeenCalledWith(
@@ -117,6 +145,8 @@ describe("processBrain — valid Claude response", () => {
       expect.objectContaining({
         brainAction: "reply",
         replyDraft: "Thanks for reaching out, I'm not interested.",
+        informationalCategory: "action_required",
+        workTypes: ["meeting"],
       }),
       expect.any(Object)
     );

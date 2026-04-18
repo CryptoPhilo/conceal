@@ -1,6 +1,21 @@
 import type { FastifyInstance } from "fastify";
 import { getDb } from "../db.js";
 
+function computeThreatLevel(priorityScore: number | null): "critical" | "high" | "medium" | "low" {
+  if (priorityScore === null || priorityScore === undefined) return "low";
+  if (priorityScore >= 80) return "critical";
+  if (priorityScore >= 60) return "high";
+  if (priorityScore >= 40) return "medium";
+  return "low";
+}
+
+function enrichRow(row: Record<string, unknown>) {
+  return {
+    ...row,
+    threat_level: computeThreatLevel(row.priority_score as number | null),
+  };
+}
+
 export async function emailLogRoutes(app: FastifyInstance) {
   app.addHook("onRequest", app.authenticate);
 
@@ -15,7 +30,8 @@ export async function emailLogRoutes(app: FastifyInstance) {
 
       const rows = await sql`
         SELECT id, sender_hash, subject_hash, received_at, sieve_label,
-               priority_score, summary, action_taken, delivered_at
+               priority_score, summary, action_taken, delivered_at,
+               recipient_type, recipient_confidence
         FROM email_log
         WHERE user_id = ${userId}
         ORDER BY received_at DESC
@@ -26,7 +42,7 @@ export async function emailLogRoutes(app: FastifyInstance) {
         SELECT COUNT(*)::int AS count FROM email_log WHERE user_id = ${userId}
       `;
 
-      return { items: rows, total: count, limit, offset };
+      return { items: rows.map(enrichRow), total: count, limit, offset };
     }
   );
 
@@ -37,12 +53,13 @@ export async function emailLogRoutes(app: FastifyInstance) {
 
     const [row] = await sql`
       SELECT id, sender_hash, subject_hash, received_at, sieve_label,
-             priority_score, summary, action_taken, delivered_at
+             priority_score, summary, action_taken, delivered_at,
+             recipient_type, recipient_confidence
       FROM email_log
       WHERE id = ${req.params.id} AND user_id = ${userId}
     `;
 
     if (!row) return reply.status(404).send({ error: "not_found" });
-    return row;
+    return enrichRow(row as Record<string, unknown>);
   });
 }

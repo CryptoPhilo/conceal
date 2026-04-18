@@ -33,9 +33,11 @@ async function processRecord(record: SESEvent["Records"][number]) {
   const recipients = receipt.recipients;
   const fromAddresses = mail.commonHeaders.from ?? [];
   const subject = mail.commonHeaders.subject ?? "";
+  const toAddresses = mail.commonHeaders.to ?? [];
+  const ccAddresses = mail.commonHeaders.cc ?? [];
   const rawS3Key = `emails/${messageId}`;
 
-  await Promise.all(recipients.map((recipient) => routeRecipient(recipient, fromAddresses, subject, messageId, rawS3Key)));
+  await Promise.all(recipients.map((recipient) => routeRecipient(recipient, fromAddresses, subject, toAddresses, ccAddresses, messageId, rawS3Key)));
 
   await deleteFromS3(rawS3Key);
 }
@@ -44,6 +46,8 @@ async function routeRecipient(
   maskingAddress: string,
   fromAddresses: string[],
   subject: string,
+  toAddresses: string[],
+  ccAddresses: string[],
   messageId: string,
   rawS3Key: string
 ) {
@@ -96,6 +100,8 @@ async function routeRecipient(
     subject,
     rawS3Key,
     receivedAt: new Date().toISOString(),
+    toAddresses,
+    ccAddresses,
   };
 
   await getQueue().add("inbound", job, {
