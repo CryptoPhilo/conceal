@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb } from "../db.js";
 import { t } from "../lib/i18n.js";
 
-const ALLOWED_TYPES = ["slack", "notion", "todoist", "email_digest"] as const;
+const ALLOWED_TYPES = ["slack", "notion", "todoist", "email_digest", "web_dashboard"] as const;
 
 const CreateSchema = z.object({
   type: z.enum(ALLOWED_TYPES),
