@@ -12,7 +12,10 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:integration:up": "docker-compose -f docker-compose.test.yml up -d",
     "test:integration:down": "docker-compose -f docker-compose.test.yml down -v",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "translate:ko": "node scripts/translate-messages.mjs --source en --target ko",
+    "translate:en": "node scripts/translate-messages.mjs --source ko --target en",
+    "translate:legal": "node scripts/translate-legal.mjs --source en --target ko"
   },
   "devDependencies": {
     "bullmq": "^5.74.1",
