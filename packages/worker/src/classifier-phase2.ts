@@ -2,12 +2,14 @@ import Anthropic from "@anthropic-ai/sdk";
 
 export type InformationalCategory = "informational" | "action_required" | "uncertain";
 export type WorkType = "contract" | "meeting" | "cs" | "report" | "hiring" | "payment" | "other";
+export type UrgencyLevel = "critical" | "high" | "normal" | "low";
 
 export interface Phase2Result {
   informationalCategory: InformationalCategory;
   informationalConfidence: number;
   workTypes: WorkType[];
   workTypeConfidences: Partial<Record<WorkType, number>>;
+  urgencyLevel: UrgencyLevel;
 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -25,8 +27,8 @@ const NEWSLETTER_DOMAIN_PATTERN =
 
 // Static system prompt — never changes, maximises Anthropic prompt cache hit rate
 const SYSTEM_PROMPT =
-  "You are an email classifier. Given email metadata (subject, sender domain, sieve label), " +
-  "output a single JSON object with two classifications:\n\n" +
+  "You are an email classifier. Given email metadata (subject, sender domain, sieve label) " +
+  "and optionally the email body preview, output a single JSON object with three classifications:\n\n" +
   "1. informational_category — is this email purely informational or does it require action?\n" +
   '   "informational": newsletters, receipts, automated notifications, FYI/status updates\n' +
   '   "action_required": needs a reply, approval, scheduling decision, or task\n' +
@@ -39,8 +41,14 @@ const SYSTEM_PROMPT =
   '   "hiring": job applications, resumes, interview scheduling, recruiting\n' +
   '   "payment": invoices, billing statements, payment confirmations, receipts\n' +
   '   "other": does not fit any category above\n\n' +
+  "3. urgency_level — how urgently does this email need attention?\n" +
+  '   "critical": needs response within hours (escalations, outages, legal deadlines)\n' +
+  '   "high": needs response today (meeting requests, approvals, time-sensitive tasks)\n' +
+  '   "normal": can wait 1-2 days\n' +
+  '   "low": informational, no action needed\n' +
+  "Use body content (if provided) to detect deadlines, urgency signals, and escalation language.\n\n" +
   "Output JSON only — no explanation, no markdown:\n" +
-  '{"informational_category":"...","informational_confidence":0.0,"work_type_confidences":{"contract":0.0,"meeting":0.0,"cs":0.0,"report":0.0,"hiring":0.0,"payment":0.0,"other":0.0}}';
+  '{"informational_category":"...","informational_confidence":0.0,"work_type_confidences":{"contract":0.0,"meeting":0.0,"cs":0.0,"report":0.0,"hiring":0.0,"payment":0.0,"other":0.0},"urgency_level":"normal"}';
 
 const CONFIDENCE_THRESHOLD = 0.7;
 
@@ -61,6 +69,7 @@ function applyRules(
       informationalConfidence: 0.97,
       workTypes: [],
       workTypeConfidences: {},
+      urgencyLevel: "low",
     };
   }
   return null;
@@ -72,13 +81,17 @@ function buildFallback(): Phase2Result {
     informationalConfidence: 0.5,
     workTypes: ["other"],
     workTypeConfidences: { other: 0.5 },
+    urgencyLevel: "normal",
   };
 }
+
+const URGENCY_LEVELS: UrgencyLevel[] = ["critical", "high", "normal", "low"];
 
 interface RawLLMResponse {
   informational_category: string;
   informational_confidence: number;
   work_type_confidences: Partial<Record<WorkType, number>>;
+  urgency_level?: string;
 }
 
 function parseResponse(raw: string): Phase2Result {
@@ -101,11 +114,16 @@ function parseResponse(raw: string): Phase2Result {
       ? Math.min(1, Math.max(0, parsed.informational_confidence))
       : 0.5;
 
+  const urgencyLevel = URGENCY_LEVELS.includes(parsed.urgency_level as UrgencyLevel)
+    ? (parsed.urgency_level as UrgencyLevel)
+    : "normal";
+
   return {
     informationalCategory: category,
     informationalConfidence,
     workTypes,
     workTypeConfidences: confidences,
+    urgencyLevel,
   };
 }
 
@@ -113,10 +131,15 @@ export async function classifyPhase2(
   subject: string,
   senderDomain: string,
   senderLocalPart: string,
-  sieveLabel: string | null
+  sieveLabel: string | null,
+  bodyPreview?: string
 ): Promise<Phase2Result> {
   const ruleResult = applyRules(senderLocalPart, senderDomain, sieveLabel);
   if (ruleResult) return ruleResult;
+
+  const bodySection = bodyPreview
+    ? `\nBody preview:\n${bodyPreview.slice(0, 800)}`
+    : "";
 
   try {
     const response = await anthropic.beta.promptCaching.messages.create({
@@ -135,7 +158,8 @@ export async function classifyPhase2(
           content:
             `Subject: ${subject}\n` +
             `Sender domain: ${senderDomain}\n` +
-            `Sieve label: ${sieveLabel ?? "none"}`,
+            `Sieve label: ${sieveLabel ?? "none"}` +
+            bodySection,
         },
       ],
     });
