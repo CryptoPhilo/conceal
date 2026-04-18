@@ -57,7 +57,8 @@ export async function updateEmailLogBrain(
   priorityScore: number,
   actionTaken: "drop" | "delivered" | "replied" | "batched" | "bounced",
   informationalCategory: string,
-  workTypes: string[]
+  workTypes: string[],
+  senderDomain: string
 ) {
   const sql = getDb();
   await sql`
@@ -66,7 +67,8 @@ export async function updateEmailLogBrain(
         priority_score = ${priorityScore},
         action_taken = ${actionTaken},
         informational_category = ${informationalCategory},
-        work_types = ${sql.array(workTypes)}
+        work_types = ${sql.array(workTypes)},
+        sender_domain = ${senderDomain}
     WHERE sender_hash = ${senderHash}
       AND subject_hash = ${subjectHash}
       AND user_id = ${userId}

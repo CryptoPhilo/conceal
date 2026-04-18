@@ -146,7 +146,8 @@ export async function processBrain(
         result.priorityScore,
         dbAction,
         phase2.informationalCategory,
-        phase2.workTypes
+        phase2.workTypes,
+        data.senderDomain
       ),
       updateEmailLogPhase3(
         data.senderHash,
