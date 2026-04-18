@@ -1,4 +1,4 @@
--- Enable pgvector extension (requires Supabase pgvector add-on)
+-- Enable pgvector extension (supported natively on Neon)
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Users
@@ -10,11 +10,6 @@ CREATE TABLE users (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Row-level security (Supabase Auth integration)
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "users_self" ON users
-  USING (id = auth.uid());
-
 -- Masking Addresses
 CREATE TABLE masking_addresses (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -25,10 +20,6 @@ CREATE TABLE masking_addresses (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX masking_addresses_address_idx ON masking_addresses(address);
-
-ALTER TABLE masking_addresses ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "masking_addresses_owner" ON masking_addresses
-  USING (user_id = auth.uid());
 
 -- Filtering Rules
 CREATE TABLE filter_rules (
@@ -42,10 +33,6 @@ CREATE TABLE filter_rules (
   active         BOOLEAN NOT NULL DEFAULT true,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-ALTER TABLE filter_rules ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "filter_rules_owner" ON filter_rules
-  USING (user_id = auth.uid());
 
 -- Processed Email Log (NO email content stored)
 CREATE TABLE email_log (
@@ -63,10 +50,6 @@ CREATE TABLE email_log (
 );
 CREATE INDEX email_log_user_received_idx ON email_log(user_id, received_at DESC);
 
-ALTER TABLE email_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "email_log_owner" ON email_log
-  USING (user_id = auth.uid());
-
 -- User Context Vectors (for RAG in The Brain — user-provided context only)
 CREATE TABLE user_context_vectors (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -80,10 +63,6 @@ CREATE INDEX user_context_vectors_embedding_idx
   ON user_context_vectors USING ivfflat (embedding vector_cosine_ops)
   WITH (lists = 100);
 
-ALTER TABLE user_context_vectors ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "user_context_vectors_owner" ON user_context_vectors
-  USING (user_id = auth.uid());
-
 -- Delivery Destinations
 CREATE TABLE delivery_destinations (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -93,7 +72,3 @@ CREATE TABLE delivery_destinations (
   active     BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-ALTER TABLE delivery_destinations ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "delivery_destinations_owner" ON delivery_destinations
-  USING (user_id = auth.uid());

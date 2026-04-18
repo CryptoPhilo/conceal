@@ -1,5 +1,6 @@
-DATABASE_URL=postgresql://postgres:password@db.supabase.co:5432/postgres
+DATABASE_URL=postgresql://neondb_owner:<password>@ep-<branch>-pooler.<region>.aws.neon.tech/neondb?channel_binding=require&sslmode=require
 REDIS_URL=rediss://:<token>@your-redis.cache.amazonaws.com:6380
 SES_BUCKET_NAME=shadow-ses-inbound
 BOUNCE_FROM_ADDRESS=noreply@anycode.com
 AWS_REGION=us-east-1
+JWT_SECRET=your-jwt-secret-min-32-chars
