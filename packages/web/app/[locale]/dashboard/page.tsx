@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://conceal-omega.vercel.app';
 
@@ -86,9 +87,12 @@ export default function Dashboard() {
     <main className="min-h-screen bg-gray-950 text-white">
       <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">{t('title')}</h1>
-        <Link href="/onboarding/step1" className="text-sm text-indigo-400 hover:text-indigo-300">
-          {t('add_account')}
-        </Link>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <Link href="/onboarding/step1" className="text-sm text-indigo-400 hover:text-indigo-300">
+            {t('add_account')}
+          </Link>
+        </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">

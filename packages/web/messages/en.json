@@ -115,5 +115,10 @@
   },
   "common": {
     "loading": "Loading..."
+  },
+  "language_switcher": {
+    "label": "Language",
+    "ko": "한국어",
+    "en": "English"
   }
 }
