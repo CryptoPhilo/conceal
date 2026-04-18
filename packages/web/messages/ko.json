@@ -27,11 +27,23 @@
     "step1": {
       "title": "이메일 계정을 연결해 주세요",
       "privacy_note": "🔒 읽기 전용 권한만 요청합니다",
-      "gmail": "Google (Gmail)로 계속",
+      "gmail": "Gmail로 무료로 시작하기",
       "outlook": "Microsoft (Outlook)",
       "imap_other": "다른 이메일 (IMAP 설정) →",
       "connecting": "연결 중...",
       "error_default": "연결 실패",
+      "features_title": "이런 게 가능해져요",
+      "features": [
+        "받은 편지함 노이즈 자동 제거",
+        "구독·뉴스레터 자동 분류",
+        "마스킹 주소로 개인정보 보호"
+      ],
+      "trust_title": "안심하고 사용하세요",
+      "trust": [
+        "읽기 전용 권한만 요청",
+        "언제든 연결 해제 가능",
+        "개인 데이터 판매 없음"
+      ],
       "imap": {
         "email": "이메일 주소",
         "password": "앱 비밀번호",

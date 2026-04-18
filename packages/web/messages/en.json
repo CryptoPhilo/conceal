@@ -27,11 +27,23 @@
     "step1": {
       "title": "Connect your email account",
       "privacy_note": "🔒 Read-only access only",
-      "gmail": "Continue with Google (Gmail)",
+      "gmail": "Start free with Gmail",
       "outlook": "Microsoft (Outlook)",
       "imap_other": "Other email (IMAP setup) →",
       "connecting": "Connecting...",
       "error_default": "Connection failed",
+      "features_title": "What you'll get",
+      "features": [
+        "Inbox noise removed automatically",
+        "Subscriptions & newsletters sorted",
+        "Protect your real address with masking"
+      ],
+      "trust_title": "Safe to use",
+      "trust": [
+        "Read-only access only",
+        "Disconnect any time",
+        "Your data is never sold"
+      ],
       "imap": {
         "email": "Email address",
         "password": "App password",
