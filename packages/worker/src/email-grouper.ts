@@ -14,6 +14,7 @@ export interface WorkTypeGroup {
   workType: WorkType | "other";
   count: number;
   emails: EmailRecord[];
+  summaries: string[];
 }
 
 export interface SenderGroup {
@@ -21,6 +22,7 @@ export interface SenderGroup {
   count: number;
   labels: string[];
   topWorkTypes: string[];
+  summaries: string[];
 }
 
 export interface GroupedView {
@@ -48,7 +50,15 @@ export function groupEmails(emails: EmailRecord[]): GroupedView {
   }
 
   const workTypeGroups: WorkTypeGroup[] = WORK_TYPES
-    .map((wt) => ({ workType: wt, count: workTypeBuckets.get(wt)!.length, emails: workTypeBuckets.get(wt)! }))
+    .map((wt) => {
+      const bucket = workTypeBuckets.get(wt)!;
+      return {
+        workType: wt,
+        count: bucket.length,
+        emails: bucket,
+        summaries: bucket.map((e) => e.summary).filter((s): s is string => s != null),
+      };
+    })
     .filter((g) => g.count > 0)
     .sort((a, b) => b.count - a.count);
 
@@ -72,6 +82,7 @@ export function groupEmails(emails: EmailRecord[]): GroupedView {
       count: d.emails.length,
       labels: Array.from(d.labels),
       topWorkTypes: Array.from(d.workTypes),
+      summaries: d.emails.map((e) => e.summary).filter((s): s is string => s != null),
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 20);
