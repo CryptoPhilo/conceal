@@ -3,9 +3,7 @@ import { defineRouting } from 'next-intl/routing';
 export const routing = defineRouting({
   locales: ['ko', 'en'],
   defaultLocale: 'ko',
-  // Keep existing URL structure — locale is detected from cookie, not URL prefix
-  localePrefix: 'never',
-  // Persist detected locale in a cookie for subsequent requests
+  localePrefix: 'always',
   localeCookie: {
     name: 'NEXT_LOCALE',
     maxAge: 60 * 60 * 24 * 365,
