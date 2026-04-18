@@ -5,6 +5,8 @@ import type { InboundEmailJob, FilterRule, SieveResult } from "@shadow/shared";
 // explicit rules with higher priority.
 
 const NOREPLY_PATTERN = /^(noreply|no-reply|donotreply|notifications?|automated?|mailer-daemon|postmaster|bounce|alert|updates?)@/i;
+// Catches compound variants: no-reply-aws, googleaistudio-noreply, forwarding-noreply, do-not-reply, etc.
+const NOREPLY_CONTAINS = /(?:noreply|no-reply|donotreply|do-not-reply)/i;
 
 const NEWSLETTER_SUBJECT_PATTERN = /\b(unsubscribe|newsletter|mailing.?list|weekly.?digest|monthly.?roundup)\b|뉴스레터|레터/i;
 const NEWSLETTER_DOMAIN_PATTERN = /\b(mailchimp|sendgrid|constantcontact|campaignmonitor|klaviyo|substack|beehiiv|facebookmail|instagram|twittermail)\b/;
@@ -30,7 +32,9 @@ const SYSTEM_RULES: BuiltinRule[] = [
   {
     label: "system_notification",
     action: "quarantine",
-    test: (j) => NOREPLY_PATTERN.test(j.senderLocalPart + "@"),
+    test: (j) =>
+      NOREPLY_PATTERN.test(j.senderLocalPart + "@") ||
+      NOREPLY_CONTAINS.test(j.senderLocalPart),
   },
   {
     label: "newsletter",

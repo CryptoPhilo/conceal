@@ -19,6 +19,7 @@ const WORK_TYPE_LABELS: WorkType[] = [
 // Rule-based pre-classification — matches sieve.ts patterns to avoid redundant LLM calls
 const NOREPLY_PATTERN =
   /^(noreply|no-reply|donotreply|notifications?|automated?|mailer-daemon|postmaster|bounce|alert|updates?)@/i;
+const NOREPLY_CONTAINS = /(?:noreply|no-reply|donotreply|do-not-reply)/i;
 const NEWSLETTER_DOMAIN_PATTERN =
   /\b(mailchimp|sendgrid|constantcontact|campaignmonitor|klaviyo|substack|beehiiv)\b/;
 
@@ -52,6 +53,7 @@ function applyRules(
     sieveLabel === "newsletter" ||
     sieveLabel === "system_notification" ||
     NOREPLY_PATTERN.test(senderLocalPart + "@") ||
+    NOREPLY_CONTAINS.test(senderLocalPart) ||
     NEWSLETTER_DOMAIN_PATTERN.test(senderDomain)
   ) {
     return {
