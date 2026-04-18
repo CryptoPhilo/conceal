@@ -23,6 +23,34 @@
         "submit": "IMAP으로 연결",
         "back": "← 돌아가기"
       }
+    },
+    "step2": {
+      "title": "자동화 초기 설정",
+      "subtitle": "분석 결과를 확인하고 자동화를 시작하세요",
+      "analysis_title": "📊 분석 결과",
+      "active_filters": "활성 필터 규칙",
+      "subscription_auto": "{count}개의 구독/뉴스레터가 자동 처리됩니다",
+      "account_connected": "✓ 연결됨",
+      "filter_rules": "필터 규칙 ({count}개)",
+      "prev": "← 이전",
+      "next": "다음 →",
+      "skip_later": "건너뛰기 (나중에 설정)"
+    },
+    "step3": {
+      "title": "스마트폰 이메일 설정",
+      "subtitle": "선택 사항 — 지금 하지 않아도 됩니다",
+      "mask_hint": "마스킹 주소 (탭하여 복사)",
+      "prev": "← 이전",
+      "finish": "완료 →",
+      "skip": "건너뛰기"
+    },
+    "complete": {
+      "title": "온보딩 완료!",
+      "subtitle": "이제 Conceal이 받은 편지함을 대신 관리합니다.\n이메일 노이즈에서 자유로워지세요.",
+      "whats_next": "앞으로 일어나는 일",
+      "feature_1": "구독 메일과 뉴스레터가 자동으로 걸러집니다",
+      "feature_2": "중요한 메일만 요약되어 전달됩니다",
+      "feature_3": "매일 다이제스트로 한눈에 확인하세요"
     }
   },
   "dashboard": {
@@ -51,6 +79,8 @@
     "digest_empty": "오늘 처리된 이메일이 없습니다",
     "no_accounts": "아직 연결된 계정이 없습니다",
     "connect_email": "이메일 연결하기",
+    "ios_label": "📱 iOS",
+    "android_label": "🤖 Android",
     "ios_steps": [
       "아이폰 설정 앱을 엽니다",
       "아래로 스크롤하여 \"Mail\" 탭합니다",

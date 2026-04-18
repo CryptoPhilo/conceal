@@ -1,86 +1,53 @@
 import type { FastifyInstance } from "fastify";
+import { getDb } from "../db.js";
+import { t, tSteps } from "../lib/i18n.js";
 
-// Forwarding setup guides per provider
-const FORWARDING_GUIDES: Record<string, {
-  provider: string;
-  displayName: string;
-  forwardingAddress: string;
-  steps: string[];
-  settingsUrl: string;
-  notes?: string;
-}> = {
-  gmail: {
-    provider: "gmail",
-    displayName: "Gmail",
-    forwardingAddress: `forward@${process.env.MASKING_DOMAIN ?? "shadow.yourdomain.com"}`,
-    settingsUrl: "https://mail.google.com/mail/u/0/#settings/fwdandpop",
-    steps: [
-      "Open Gmail Settings → See all settings → Forwarding and POP/IMAP",
-      "Click 'Add a forwarding address' and enter the forwarding address below",
-      "Check your Shadow inbox for the confirmation code from Google",
-      "Enter the confirmation code in Gmail and click Proceed",
-      "Select 'Forward a copy of incoming mail' and choose what to do with originals (Keep / Mark as read / Delete)",
-      "Click Save Changes",
-    ],
-    notes:
-      "Gmail forwards all incoming mail. Use server-side filters in Gmail to forward only specific categories (e.g. newsletters) for more targeted control.",
-  },
-  outlook: {
-    provider: "outlook",
-    displayName: "Outlook / Microsoft 365",
-    forwardingAddress: `forward@${process.env.MASKING_DOMAIN ?? "shadow.yourdomain.com"}`,
-    settingsUrl: "https://outlook.live.com/mail/options/mail/messageContent",
-    steps: [
-      "Go to Outlook Settings (gear icon) → View all Outlook settings",
-      "Navigate to Mail → Forwarding",
-      "Enable 'Enable forwarding' and enter the forwarding address below",
-      "Optionally enable 'Keep a copy of forwarded messages'",
-      "Click Save",
-    ],
-    notes:
-      "Microsoft 365 business accounts may require an admin to enable external forwarding. Contact your IT department if the option is grayed out.",
-  },
-  yahoo: {
-    provider: "yahoo",
-    displayName: "Yahoo Mail",
-    forwardingAddress: `forward@${process.env.MASKING_DOMAIN ?? "shadow.yourdomain.com"}`,
-    settingsUrl: "https://mail.yahoo.com/d/settings/1",
-    steps: [
-      "Open Yahoo Mail Settings → More Settings → Mailboxes",
-      "Select your Yahoo email address",
-      "Scroll to 'Forwarding' and enter the forwarding address below",
-      "Click Verify and follow the verification link in your inbox",
-      "Return to Settings and enable forwarding",
-    ],
-  },
-  icloud: {
-    provider: "icloud",
-    displayName: "iCloud Mail",
-    forwardingAddress: `forward@${process.env.MASKING_DOMAIN ?? "shadow.yourdomain.com"}`,
-    settingsUrl: "https://www.icloud.com/settings/",
-    steps: [
-      "Sign in to iCloud.com and open Mail",
-      "Click the Settings gear → Preferences → General",
-      "Check 'Forward my email to' and enter the forwarding address below",
-      "Click Done",
-    ],
-  },
-  protonmail: {
-    provider: "protonmail",
-    displayName: "Proton Mail",
-    forwardingAddress: `forward@${process.env.MASKING_DOMAIN ?? "shadow.yourdomain.com"}`,
-    settingsUrl: "https://mail.proton.me/u/0/mail/settings",
-    steps: [
-      "Open Proton Mail Settings → All settings → Email → Auto-forwarding (Proton Unlimited or Business plan required)",
-      "Click 'Add forwarding rule'",
-      "Enter the forwarding address and select which messages to forward",
-      "Verify your ownership via the confirmation email sent to the forwarding address",
-      "Enable the forwarding rule",
-    ],
-    notes:
-      "Auto-forwarding in Proton Mail requires a paid plan. Free accounts can use IMAP connection instead via the 'Add email account' option.",
-  },
+const MASKING_DOMAIN = process.env.MASKING_DOMAIN ?? "shadow.yourdomain.com";
+
+const PROVIDER_KEYS = ["gmail", "outlook", "yahoo", "icloud", "protonmail"] as const;
+type ProviderKey = (typeof PROVIDER_KEYS)[number];
+
+const FORWARDING_URLS: Record<ProviderKey, string> = {
+  gmail: "https://mail.google.com/mail/u/0/#settings/fwdandpop",
+  outlook: "https://outlook.live.com/mail/options/mail/messageContent",
+  yahoo: "https://mail.yahoo.com/d/settings/1",
+  icloud: "https://www.icloud.com/settings/",
+  protonmail: "https://mail.proton.me/u/0/mail/settings",
 };
+
+function getForwardingAddress(): string {
+  return `forward@${MASKING_DOMAIN}`;
+}
+
+async function getUserLocale(userId: string): Promise<string> {
+  try {
+    const sql = getDb();
+    const [row] = await sql<{ preferred_language: string }[]>`
+      SELECT preferred_language FROM users WHERE id = ${userId} LIMIT 1
+    `;
+    return row?.preferred_language ?? "ko";
+  } catch {
+    return "ko";
+  }
+}
+
+function buildGuide(provider: ProviderKey, locale: string) {
+  const prefix = `forwarding.${provider}`;
+  const forwardingAddress = getForwardingAddress();
+  return {
+    provider,
+    displayName: t(`${prefix}.display_name`, locale),
+    forwardingAddress,
+    steps: tSteps(`${prefix}.steps`, locale),
+    settingsUrl: FORWARDING_URLS[provider],
+    ...(locale === "ko" || locale === "en"
+      ? (() => {
+          const notes = t(`${prefix}.notes`, locale);
+          return notes !== `${prefix}.notes` ? { notes } : {};
+        })()
+      : {}),
+  };
+}
 
 // iOS MDM profile template for email account configuration
 function buildIosMdmProfile(params: {
@@ -90,9 +57,11 @@ function buildIosMdmProfile(params: {
   imapPort: number;
   smtpHost: string;
   smtpPort: number;
+  locale: string;
 }): string {
   const uuid = randomUuid();
   const accountUuid = randomUuid();
+  const accountDescription = `${escapeXml(params.displayName)} ${t("mdm.ios.account_description_suffix", params.locale)}`;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -101,7 +70,7 @@ function buildIosMdmProfile(params: {
   <array>
     <dict>
       <key>EmailAccountDescription</key>
-      <string>${escapeXml(params.displayName)} via Shadow</string>
+      <string>${accountDescription}</string>
       <key>EmailAccountName</key>
       <string>${escapeXml(params.displayName)}</string>
       <key>EmailAccountType</key>
@@ -125,11 +94,11 @@ function buildIosMdmProfile(params: {
       <key>OutgoingMailServerUsername</key>
       <string>${escapeXml(params.emailAddress)}</string>
       <key>PayloadDescription</key>
-      <string>Configures IMAP email account</string>
+      <string>${t("mdm.ios.payload_description", params.locale)}</string>
       <key>PayloadDisplayName</key>
       <string>${escapeXml(params.displayName)}</string>
       <key>PayloadIdentifier</key>
-      <string>com.shadow.email.${accountUuid}</string>
+      <string>com.conceal.email.${accountUuid}</string>
       <key>PayloadType</key>
       <string>com.apple.mail.managed</string>
       <key>PayloadUUID</key>
@@ -141,13 +110,13 @@ function buildIosMdmProfile(params: {
     </dict>
   </array>
   <key>PayloadDescription</key>
-  <string>Shadow Email Configuration</string>
+  <string>${t("mdm.ios.profile_description", params.locale)}</string>
   <key>PayloadDisplayName</key>
-  <string>Shadow Email Setup</string>
+  <string>${t("mdm.ios.profile_display_name", params.locale)}</string>
   <key>PayloadIdentifier</key>
-  <string>com.shadow.email.profile.${uuid}</string>
+  <string>com.conceal.email.profile.${uuid}</string>
   <key>PayloadOrganization</key>
-  <string>Shadow</string>
+  <string>${t("mdm.ios.organization", params.locale)}</string>
   <key>PayloadRemovalDisallowed</key>
   <false/>
   <key>PayloadType</key>
@@ -178,14 +147,15 @@ export async function onboardingRoutes(app: FastifyInstance) {
     { onRequest: [app.authenticate] },
     async (req, reply) => {
       const { provider } = req.params;
-      const guide = FORWARDING_GUIDES[provider.toLowerCase()];
-      if (!guide) {
+      if (!PROVIDER_KEYS.includes(provider.toLowerCase() as ProviderKey)) {
         return reply.status(404).send({
           error: "unsupported_provider",
-          supported: Object.keys(FORWARDING_GUIDES),
+          supported: [...PROVIDER_KEYS],
         });
       }
-      return guide;
+      const userId = (req.user as { sub: string }).sub;
+      const locale = await getUserLocale(userId);
+      return buildGuide(provider.toLowerCase() as ProviderKey, locale);
     }
   );
 
@@ -193,17 +163,18 @@ export async function onboardingRoutes(app: FastifyInstance) {
   app.get(
     "/onboarding/forwarding-guides",
     { onRequest: [app.authenticate] },
-    async () => {
-      return Object.values(FORWARDING_GUIDES).map(({ provider, displayName, settingsUrl }) => ({
+    async (req) => {
+      const userId = (req.user as { sub: string }).sub;
+      const locale = await getUserLocale(userId);
+      return PROVIDER_KEYS.map(provider => ({
         provider,
-        displayName,
-        settingsUrl,
+        displayName: t(`forwarding.${provider}.display_name`, locale),
+        settingsUrl: FORWARDING_URLS[provider],
       }));
     }
   );
 
   // Generate iOS MDM profile for IMAP account setup
-  // Query: emailAddress, displayName, imapHost, imapPort (opt), smtpHost, smtpPort (opt)
   app.get(
     "/onboarding/mobile-profile/ios",
     { onRequest: [app.authenticate] },
@@ -221,6 +192,9 @@ export async function onboardingRoutes(app: FastifyInstance) {
         });
       }
 
+      const userId = (req.user as { sub: string }).sub;
+      const locale = await getUserLocale(userId);
+
       const plist = buildIosMdmProfile({
         emailAddress,
         displayName,
@@ -228,9 +202,10 @@ export async function onboardingRoutes(app: FastifyInstance) {
         imapPort: parseInt(qs.imapPort ?? "993", 10),
         smtpHost,
         smtpPort: parseInt(qs.smtpPort ?? "587", 10),
+        locale,
       });
 
-      const filename = `shadow-email-${emailAddress.replace(/@/g, "_at_")}.mobileconfig`;
+      const filename = `conceal-email-${emailAddress.replace(/@/g, "_at_")}.mobileconfig`;
       reply.header("Content-Type", "application/x-apple-aspen-config");
       reply.header("Content-Disposition", `attachment; filename="${filename}"`);
       return reply.send(plist);
@@ -255,6 +230,9 @@ export async function onboardingRoutes(app: FastifyInstance) {
         });
       }
 
+      const userId = (req.user as { sub: string }).sub;
+      const locale = await getUserLocale(userId);
+
       const config = {
         account: {
           displayName,
@@ -275,18 +253,10 @@ export async function onboardingRoutes(app: FastifyInstance) {
           username: emailAddress,
           requiresAuth: true,
         },
-        setup_instructions: [
-          "Open Gmail / Samsung Email / your preferred mail app on Android",
-          "Add account → Other",
-          "Enter your email address and tap Next",
-          "Select IMAP",
-          "Enter the incoming server settings below",
-          "Enter the outgoing server settings below",
-          "Follow any remaining prompts to complete setup",
-        ],
+        setup_instructions: tSteps("android.setup.steps", locale),
       };
 
-      const filename = `shadow-email-${emailAddress.replace(/@/g, "_at_")}.json`;
+      const filename = `conceal-email-${emailAddress.replace(/@/g, "_at_")}.json`;
       reply.header("Content-Type", "application/json");
       reply.header("Content-Disposition", `attachment; filename="${filename}"`);
       return reply.send(config);

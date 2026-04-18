@@ -109,6 +109,18 @@ export async function loadUserEmail(userId: string): Promise<string | null> {
   return rows[0]?.email ?? null;
 }
 
+export async function loadUserLocale(userId: string): Promise<string> {
+  try {
+    const sql = getDb();
+    const rows = await sql<Array<{ preferred_language: string }>>`
+      SELECT preferred_language FROM users WHERE id = ${userId} LIMIT 1
+    `;
+    return rows[0]?.preferred_language ?? "ko";
+  } catch {
+    return "ko";
+  }
+}
+
 export async function markEmailDelivered(
   senderHash: string,
   subjectHash: string,

@@ -23,6 +23,34 @@
         "submit": "Connect via IMAP",
         "back": "← Go back"
       }
+    },
+    "step2": {
+      "title": "Automation Setup",
+      "subtitle": "Review your analysis and start automation",
+      "analysis_title": "📊 Analysis Results",
+      "active_filters": "Active filter rules",
+      "subscription_auto": "{count} subscription(s)/newsletter(s) will be handled automatically",
+      "account_connected": "✓ Connected",
+      "filter_rules": "Filter rules ({count})",
+      "prev": "← Previous",
+      "next": "Next →",
+      "skip_later": "Skip (set up later)"
+    },
+    "step3": {
+      "title": "Smartphone Email Setup",
+      "subtitle": "Optional — you don't have to do this now",
+      "mask_hint": "Masking address (tap to copy)",
+      "prev": "← Previous",
+      "finish": "Finish →",
+      "skip": "Skip"
+    },
+    "complete": {
+      "title": "Onboarding complete!",
+      "subtitle": "Conceal will now manage your inbox for you.\nBreak free from email noise.",
+      "whats_next": "What happens next",
+      "feature_1": "Subscription mail and newsletters will be filtered automatically",
+      "feature_2": "Only important emails will be summarized and delivered",
+      "feature_3": "Check everything at a glance with daily digests"
     }
   },
   "dashboard": {
@@ -51,6 +79,8 @@
     "digest_empty": "No emails processed today",
     "no_accounts": "No connected accounts yet",
     "connect_email": "Connect email",
+    "ios_label": "📱 iOS",
+    "android_label": "🤖 Android",
     "ios_steps": [
       "Open the iPhone Settings app",
       "Scroll down and tap \"Mail\"",

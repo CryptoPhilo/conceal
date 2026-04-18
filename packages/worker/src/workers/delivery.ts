@@ -2,7 +2,8 @@ import type { Job } from "bullmq";
 import type { Redis } from "ioredis";
 import type { DeliveryJob } from "@shadow/shared";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { loadDeliveryDestinations, loadUserEmail, markEmailDelivered } from "../db.js";
+import { loadDeliveryDestinations, loadUserEmail, loadUserLocale, markEmailDelivered } from "../db.js";
+import { t } from "../lib/i18n.js";
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? "us-east-1" });
 const NOTIFY_FROM = process.env.NOTIFY_FROM_ADDRESS ?? process.env.BOUNCE_FROM_ADDRESS ?? "noreply@shadow.yourdomain.com";
@@ -32,6 +33,7 @@ async function deliverToSlack(
   config: SlackConfig,
   summary: string,
   priorityScore: number,
+  locale: string,
   job: Job<DeliveryJob>
 ): Promise<void> {
   try {
@@ -39,8 +41,8 @@ async function deliverToSlack(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        text: `📧 ${summary}\nPriority: ${priorityScore}/100`,
-        username: "Shadow Email",
+        text: t("delivery.slack_text", locale, { summary, score: priorityScore }),
+        username: t("delivery.slack_username", locale),
       }),
       signal: AbortSignal.timeout(10_000),
     });
@@ -107,6 +109,7 @@ async function deliverToEmail(
   subject: string,
   summary: string,
   priorityScore: number,
+  locale: string,
   job: Job<DeliveryJob>
 ): Promise<void> {
   try {
@@ -115,13 +118,13 @@ async function deliverToEmail(
         Source: NOTIFY_FROM,
         Destination: { ToAddresses: [toAddress] },
         Message: {
-          Subject: { Data: `[Shadow] ${subject}` },
+          Subject: { Data: t("delivery.email_subject", locale, { subject }) },
           Body: {
             Text: {
-              Data: `Priority: ${priorityScore}/100\n\n${summary}`,
+              Data: t("delivery.email_body_text", locale, { score: priorityScore, summary }),
             },
             Html: {
-              Data: `<p><strong>Priority:</strong> ${priorityScore}/100</p><p>${summary.replace(/\n/g, "<br>")}</p>`,
+              Data: t("delivery.email_body_html", locale, { score: priorityScore, summary: summary.replace(/\n/g, "<br>") }),
             },
           },
         },
@@ -142,6 +145,8 @@ export async function processDelivery(
     `[delivery] processing — action=${data.brainAction} score=${data.priorityScore}`
   );
 
+  const locale = await loadUserLocale(data.userId).catch(() => "ko");
+
   let destinations: Array<{ id: string; type: string; configEnc: Record<string, unknown> }> = [];
   try {
     destinations = await loadDeliveryDestinations(data.userId);
@@ -160,7 +165,7 @@ export async function processDelivery(
       case "slack": {
         const slackCfg = cfg as SlackConfig;
         if (slackCfg.webhookUrl) {
-          await deliverToSlack(slackCfg, data.summary, data.priorityScore, job);
+          await deliverToSlack(slackCfg, data.summary, data.priorityScore, locale, job);
           job.log(`[delivery] delivered to slack dest=${dest.id}`);
         } else {
           job.log(`[delivery] slack dest=${dest.id} missing webhookUrl — skipping`);
@@ -191,7 +196,7 @@ export async function processDelivery(
           }
         }
         if (userEmail) {
-          await deliverToEmail(userEmail, data.subject, data.summary, data.priorityScore, job);
+          await deliverToEmail(userEmail, data.subject, data.summary, data.priorityScore, locale, job);
           job.log(`[delivery] sent email to user dest=${dest.id}`);
         } else {
           job.log(`[delivery] email dest=${dest.id} — no registered email for user, skipping`);

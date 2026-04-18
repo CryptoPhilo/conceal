@@ -2,24 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://conceal-omega.vercel.app';
-
-const IOS_STEPS = [
-  '아이폰 설정 앱을 엽니다',
-  '아래로 스크롤하여 "Mail" 탭합니다',
-  '"계정" → "계정 추가"를 탭합니다',
-  '"기타" → "Mail 계정 추가"를 선택합니다',
-  '마스킹 주소와 앱 비밀번호를 입력합니다',
-];
-
-const ANDROID_STEPS = [
-  'Gmail 앱 또는 설정 앱을 엽니다',
-  '"계정 관리" → "계정 추가"를 탭합니다',
-  '"이메일" → "기타"를 선택합니다',
-  '마스킹 주소와 앱 비밀번호를 입력합니다',
-  'IMAP 서버: imap.conceal.app, 포트: 993을 입력합니다',
-];
 
 interface DigestItem {
   subject: string;
@@ -39,6 +24,7 @@ interface MaskAddr {
 }
 
 export default function Dashboard() {
+  const t = useTranslations('dashboard');
   const [digest, setDigest] = useState<DigestItem[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [masks, setMasks] = useState<MaskAddr[]>([]);
@@ -92,15 +78,17 @@ export default function Dashboard() {
   }
 
   const maskAddr = selectedMask ?? masks[0]?.address ?? null;
-  const steps = platform === 'ios' ? IOS_STEPS : ANDROID_STEPS;
+  const iosSteps = t.raw('ios_steps') as string[];
+  const androidSteps = t.raw('android_steps') as string[];
+  const steps = platform === 'ios' ? iosSteps : androidSteps;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Conceal</h1>
+        <h1 className="text-xl font-bold">{t('title')}</h1>
         <Link href="/onboarding/step1" className="text-sm text-indigo-400 hover:text-indigo-300">
-          + 계정 추가
+          {t('add_account')}
         </Link>
       </header>
 
@@ -115,22 +103,22 @@ export default function Dashboard() {
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-gray-900 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-indigo-400">{accounts.length}</div>
-                <div className="text-xs text-gray-400 mt-1">연결된 계정</div>
+                <div className="text-xs text-gray-400 mt-1">{t('stats.accounts')}</div>
               </div>
               <div className="bg-gray-900 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-green-400">{masks.length}</div>
-                <div className="text-xs text-gray-400 mt-1">마스킹 주소</div>
+                <div className="text-xs text-gray-400 mt-1">{t('stats.masks')}</div>
               </div>
               <div className="bg-gray-900 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-yellow-400">{digest.length}</div>
-                <div className="text-xs text-gray-400 mt-1">오늘 요약</div>
+                <div className="text-xs text-gray-400 mt-1">{t('stats.digest')}</div>
               </div>
             </div>
 
             {/* Accounts */}
             {accounts.length > 0 && (
               <section className="space-y-3">
-                <h2 className="font-semibold text-gray-300">연결된 계정</h2>
+                <h2 className="font-semibold text-gray-300">{t('accounts_section')}</h2>
                 {accounts.map(acc => (
                   <div key={acc.id} className="flex items-center gap-3 bg-gray-900 rounded-xl p-4">
                     <div className="w-9 h-9 rounded-full bg-indigo-900 flex items-center justify-center text-sm font-bold uppercase">
@@ -140,7 +128,7 @@ export default function Dashboard() {
                       <div className="font-medium text-sm truncate">{acc.email}</div>
                       <div className="text-xs text-gray-500 capitalize">{acc.provider}</div>
                     </div>
-                    <span className="text-green-400 text-xs">활성</span>
+                    <span className="text-green-400 text-xs">{t('account_active')}</span>
                   </div>
                 ))}
               </section>
@@ -150,18 +138,18 @@ export default function Dashboard() {
             {(masks.length > 0 || accounts.length > 0) && (
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-300">마스킹 주소</h2>
+                  <h2 className="font-semibold text-gray-300">{t('masks_section')}</h2>
                   <button
                     onClick={createMask}
                     disabled={creatingMask}
                     className="text-xs text-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
                   >
-                    {creatingMask ? '생성 중...' : '+ 새 주소'}
+                    {creatingMask ? t('creating_mask') : t('new_mask')}
                   </button>
                 </div>
                 {masks.length === 0 && (
                   <div className="bg-gray-900 rounded-xl px-4 py-3 text-sm text-gray-500">
-                    아직 마스킹 주소가 없습니다. "+ 새 주소"를 눌러 생성하세요.
+                    {t('no_masks')}
                   </div>
                 )}
                 {masks.map(m => (
@@ -172,7 +160,7 @@ export default function Dashboard() {
                   >
                     <span className="font-mono text-sm text-indigo-300 truncate">{m.address}</span>
                     <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                      {copied === m.address ? '✓ 복사됨' : '복사'}
+                      {copied === m.address ? t('copied') : t('copy')}
                     </span>
                   </button>
                 ))}
@@ -189,8 +177,8 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3">
                     <span className="text-lg">📱</span>
                     <div className="text-left">
-                      <div className="font-medium text-sm">스마트폰 이메일 설정</div>
-                      <div className="text-xs text-gray-500 mt-0.5">iOS / Android 기기에서 Conceal 사용하기</div>
+                      <div className="font-medium text-sm">{t('smartphone_setup')}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{t('smartphone_subtitle')}</div>
                     </div>
                   </div>
                   <span className="text-gray-500 text-sm">{setupOpen ? '▲' : '▼'}</span>
@@ -205,7 +193,7 @@ export default function Dashboard() {
                           onClick={() => setPlatform(p)}
                           className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${platform === p ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
                         >
-                          {p === 'ios' ? '📱 iOS' : '🤖 Android'}
+                          {p === 'ios' ? t('ios_label') : t('android_label')}
                         </button>
                       ))}
                     </div>
@@ -213,7 +201,7 @@ export default function Dashboard() {
                     {masks.length > 0 && (
                       <div className="space-y-1.5">
                         <p className="text-xs text-gray-400">
-                          마스킹 주소{masks.length > 1 ? ' (선택 후 복사)' : ' (탭하여 복사)'}
+                          {t('masking_address')}{masks.length > 1 ? t('mask_copy_hint_multi') : t('mask_copy_hint_single')}
                         </p>
                         {masks.length > 1 && (
                           <div className="space-y-1">
@@ -224,7 +212,7 @@ export default function Dashboard() {
                                 className={`w-full text-left font-mono text-sm rounded-lg px-3 py-2 transition-colors flex items-center justify-between ${maskAddr === m.address ? 'bg-indigo-900/60 border border-indigo-600 text-indigo-200' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
                               >
                                 <span className="truncate">{m.address}</span>
-                                {maskAddr === m.address && <span className="text-xs text-indigo-400 ml-2 flex-shrink-0">선택됨</span>}
+                                {maskAddr === m.address && <span className="text-xs text-indigo-400 ml-2 flex-shrink-0">{t('selected')}</span>}
                               </button>
                             ))}
                           </div>
@@ -236,7 +224,7 @@ export default function Dashboard() {
                           >
                             <span className="truncate">{maskAddr}</span>
                             <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                              {copied === maskAddr ? '✓ 복사됨' : '복사'}
+                              {copied === maskAddr ? t('copied') : t('copy')}
                             </span>
                           </button>
                         )}
@@ -260,10 +248,10 @@ export default function Dashboard() {
 
             {/* Today's digest */}
             <section className="space-y-3">
-              <h2 className="font-semibold text-gray-300">오늘 다이제스트</h2>
+              <h2 className="font-semibold text-gray-300">{t('digest_section')}</h2>
               {digest.length === 0 ? (
                 <div className="bg-gray-900 rounded-xl p-6 text-center text-gray-500 text-sm">
-                  오늘 처리된 이메일이 없습니다
+                  {t('digest_empty')}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -285,12 +273,12 @@ export default function Dashboard() {
             {/* Empty state prompt */}
             {accounts.length === 0 && (
               <div className="text-center space-y-4 py-8">
-                <p className="text-gray-400">아직 연결된 계정이 없습니다</p>
+                <p className="text-gray-400">{t('no_accounts')}</p>
                 <Link
                   href="/onboarding/step1"
                   className="inline-block py-3 px-6 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold transition-colors"
                 >
-                  이메일 연결하기
+                  {t('connect_email')}
                 </Link>
               </div>
             )}

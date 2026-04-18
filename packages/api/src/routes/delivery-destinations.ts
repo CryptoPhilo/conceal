@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { getDb } from "../db.js";
+import { t } from "../lib/i18n.js";
 
 const ALLOWED_TYPES = ["slack", "notion", "todoist", "email_digest"] as const;
 
@@ -112,7 +113,11 @@ export async function deliveryDestinationsRoutes(app: FastifyInstance) {
 
       if (!dest) return reply.status(404).send({ error: "not_found" });
 
-      const summary = "🔔 Test delivery from Shadow Email";
+      const [userRow] = await sql<{ preferred_language: string }[]>`
+        SELECT preferred_language FROM users WHERE id = ${userId} LIMIT 1
+      `;
+      const locale = userRow?.preferred_language ?? "ko";
+      const summary = t("delivery.test_summary", locale);
       const priorityScore = 42;
 
       try {
@@ -123,8 +128,8 @@ export async function deliveryDestinationsRoutes(app: FastifyInstance) {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                text: `📧 ${summary}\nPriority: ${priorityScore}/100`,
-                username: "Shadow Email",
+                text: t("delivery.slack_text", locale, { summary, score: priorityScore }),
+                username: t("delivery.slack_username", locale),
               }),
               signal: AbortSignal.timeout(10_000),
             });
