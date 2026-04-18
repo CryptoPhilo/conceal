@@ -85,7 +85,7 @@ export async function processSieveL2(
 
   job.log(
     `[sieve-l2] label=${result.label} score=${result.score.toFixed(3)} ` +
-    `priority=${result.priority} threat=${result.threat_level} flags=${result.security_flags.join(",")}`
+    `priority=${result.priority} threat=${result.threat_level ?? "none"} flags=${(result.security_flags ?? []).join(",")}`
   );
 
   // Security threats → drop immediately, no brain processing
