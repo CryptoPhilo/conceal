@@ -31,6 +31,8 @@ _INFORMATIONAL_LOCAL = re.compile(
     r"orders?|confirm|verify|mailer|newsletter|updates?)$",
     re.IGNORECASE,
 )
+_NOREPLY_CONTAINS = re.compile(r"(no.?reply|noreply|donotreply)", re.IGNORECASE)
+
 _PHISHING_KEYWORDS = re.compile(
     r"\b(verify your account|account suspended|click here immediately|"
     r"your account will be (closed|terminated|suspended)|"
@@ -44,6 +46,19 @@ _KNOWN_BRANDS = [
     "paypal", "apple", "amazon", "google", "microsoft", "netflix",
     "facebook", "instagram", "twitter", "linkedin", "dropbox", "stripe",
 ]
+
+# ── Local-part helpers ────────────────────────────────────────────────────────
+
+def _base_local(sender_local: str) -> str:
+    """Strip RFC 5321 plus-addressing: 'invoice+tag' → 'invoice'."""
+    return sender_local.split("+")[0]
+
+def _is_newsletter_local(sender_local: str) -> bool:
+    return bool(_NEWSLETTER_LOCAL.match(_base_local(sender_local)))
+
+def _is_informational_local(sender_local: str) -> bool:
+    base = _base_local(sender_local)
+    return bool(_INFORMATIONAL_LOCAL.match(base) or _NOREPLY_CONTAINS.search(base))
 
 # ── Types ─────────────────────────────────────────────────────────────────────
 Label = Literal[
@@ -205,9 +220,9 @@ def _classify_heuristic(req: ClassifyRequest) -> ClassifyResponse:
 
     # ── Phase 1 — Spam / newsletter filter ───────────────────────────────────
     spam_signal = (req.spf_pass is False or req.dkim_pass is False)
+    body = req.body_preview or ""
 
-    if _NEWSLETTER_LOCAL.match(req.sender_local):
-        body = req.body_preview or ""
+    if _is_newsletter_local(req.sender_local):
         if _NEWSLETTER_BODY.search(body):
             return ClassifyResponse(
                 label="newsletter",
@@ -220,6 +235,15 @@ def _classify_heuristic(req: ClassifyRequest) -> ClassifyResponse:
             return ClassifyResponse(
                 label="spam",
                 score=0.75,
+                priority=False,
+                security_flags=security_flags,
+                threat_level="none",
+            )
+        # CON-65: noreply-type senders without newsletter body → informational
+        if _NOREPLY_CONTAINS.search(_base_local(req.sender_local)):
+            return ClassifyResponse(
+                label="informational",
+                score=0.80,
                 priority=False,
                 security_flags=security_flags,
                 threat_level="none",
@@ -243,7 +267,7 @@ def _classify_heuristic(req: ClassifyRequest) -> ClassifyResponse:
         )
 
     # ── Informational (receipts, notifications, etc.) ────────────────────────
-    if _INFORMATIONAL_LOCAL.match(req.sender_local):
+    if _is_informational_local(req.sender_local):
         return ClassifyResponse(
             label="informational",
             score=0.80,

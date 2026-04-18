@@ -182,6 +182,60 @@ describe("classify — user rules take precedence", () => {
   });
 });
 
+describe("classify — Korean ad detection (CON-61)", () => {
+  it("(광고) prefix → auto_delete spam", () => {
+    const result = classify(makeJob({ subject: "(광고) 강남구 AI 교육 안내" }), []);
+    expect(result.action).toBe("auto_delete");
+    expect(result.label).toBe("spam");
+  });
+
+  it("[광고] prefix → auto_delete spam", () => {
+    const result = classify(makeJob({ subject: "[광고] 중소기업 인턴십 모집" }), []);
+    expect(result.action).toBe("auto_delete");
+    expect(result.label).toBe("spam");
+  });
+
+  it("(홍보) prefix → auto_delete spam", () => {
+    const result = classify(makeJob({ subject: "(홍보) 이벤트 안내" }), []);
+    expect(result.action).toBe("auto_delete");
+    expect(result.label).toBe("spam");
+  });
+});
+
+describe("classify — social media domain detection (CON-62)", () => {
+  it("Instagram notification domain → newsletter", () => {
+    const result = classify(makeJob({ senderDomain: "mail.instagram.com" }), []);
+    expect(result.action).toBe("quarantine");
+    expect(result.label).toBe("newsletter");
+  });
+
+  it("Facebook mail domain → newsletter", () => {
+    const result = classify(makeJob({ senderDomain: "facebookmail.com" }), []);
+    expect(result.action).toBe("quarantine");
+    expect(result.label).toBe("newsletter");
+  });
+
+  it("Twitter mail domain → newsletter", () => {
+    const result = classify(makeJob({ senderDomain: "twittermail.com" }), []);
+    expect(result.action).toBe("quarantine");
+    expect(result.label).toBe("newsletter");
+  });
+});
+
+describe("classify — Korean newsletter detection (CON-64)", () => {
+  it("뉴스레터 in subject → quarantine newsletter", () => {
+    const result = classify(makeJob({ subject: "이번 달 뉴스레터를 보내드립니다" }), []);
+    expect(result.action).toBe("quarantine");
+    expect(result.label).toBe("newsletter");
+  });
+
+  it("레터 in subject → quarantine newsletter", () => {
+    const result = classify(makeJob({ subject: "주간 레터: 이번 주 소식" }), []);
+    expect(result.action).toBe("quarantine");
+    expect(result.label).toBe("newsletter");
+  });
+});
+
 describe("classify — performance", () => {
   it("classifies 1000 emails in under 200ms total", () => {
     const job = makeJob({ subject: "Normal email from a friend" });

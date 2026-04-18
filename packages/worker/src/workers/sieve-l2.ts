@@ -60,6 +60,7 @@ async function callSieveService(job: SievedJob): Promise<SieveServiceResponse> {
     if ("dkimPass" in job) body.dkim_pass = (job as Record<string, unknown>).dkimPass;
     if ("dmarcPass" in job) body.dmarc_pass = (job as Record<string, unknown>).dmarcPass;
     if ("senderDisplayName" in job) body.sender_display_name = (job as Record<string, unknown>).senderDisplayName;
+    if (job.bodyPreview) body.body_preview = job.bodyPreview;
 
     const res = await fetch(`${SIEVE_SERVICE_URL}/classify`, {
       method: "POST",

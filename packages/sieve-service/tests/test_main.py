@@ -67,7 +67,8 @@ def test_classify_newsletter_local(client: TestClient, sender_local: str):
     })
     assert resp.status_code == 200
     body = resp.json()
-    assert body["label"] in ("newsletter", "spam")
+    # CON-65: noreply-type senders without newsletter body now return informational
+    assert body["label"] in ("newsletter", "spam", "informational")
     assert body["priority"] is False
 
 
@@ -283,6 +284,79 @@ def test_informational_receipts_sender(client: TestClient):
 
 
 # ── Edge cases ────────────────────────────────────────────────────────────────
+
+# ── CON-60: Composite noreply sender substring matching ───────────────────────
+
+def test_composite_noreply_informational(client: TestClient):
+    resp = client.post("/classify", json={
+        "subject": "AWS support case update",
+        "sender_domain": "amazon.com",
+        "sender_local": "no-reply-aws",
+        "spf_pass": True,
+        "dkim_pass": True,
+    })
+    assert resp.json()["label"] == "informational"
+
+
+def test_google_noreply_informational(client: TestClient):
+    resp = client.post("/classify", json={
+        "subject": "New sign-in from Chrome",
+        "sender_domain": "google.com",
+        "sender_local": "forwarding-noreply",
+        "spf_pass": True,
+        "dkim_pass": True,
+    })
+    assert resp.json()["label"] == "informational"
+
+
+# ── CON-63: RFC 5321 plus-address parsing ─────────────────────────────────────
+
+def test_plus_address_informational(client: TestClient):
+    resp = client.post("/classify", json={
+        "subject": "Your invoice #123",
+        "sender_domain": "billing.com",
+        "sender_local": "invoice+statements",
+        "spf_pass": True,
+        "dkim_pass": True,
+    })
+    assert resp.json()["label"] == "informational"
+
+
+def test_plus_address_noreply_informational(client: TestClient):
+    resp = client.post("/classify", json={
+        "subject": "Order shipped",
+        "sender_domain": "shop.com",
+        "sender_local": "noreply+orders",
+        "spf_pass": True,
+        "dkim_pass": True,
+    })
+    assert resp.json()["label"] == "informational"
+
+
+# ── CON-65: noreply sender without newsletter body → informational ─────────────
+
+def test_noreply_without_newsletter_body_informational(client: TestClient):
+    resp = client.post("/classify", json={
+        "subject": "Your order has been confirmed",
+        "sender_domain": "shop.com",
+        "sender_local": "noreply",
+        "spf_pass": True,
+        "dkim_pass": True,
+    })
+    assert resp.json()["label"] == "informational"
+
+
+def test_noreply_with_newsletter_body_newsletter(client: TestClient):
+    resp = client.post("/classify", json={
+        "subject": "Your weekly update",
+        "sender_domain": "news.com",
+        "sender_local": "noreply",
+        "body_preview": "Check out what's new this week... click to unsubscribe",
+        "spf_pass": True,
+        "dkim_pass": True,
+    })
+    assert resp.json()["label"] == "newsletter"
+
 
 def test_missing_subject_field(client: TestClient):
     resp = client.post("/classify", json={"sender_domain": "x.com", "sender_local": "bob"})

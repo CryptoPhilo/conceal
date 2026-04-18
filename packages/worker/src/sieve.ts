@@ -6,11 +6,14 @@ import type { InboundEmailJob, FilterRule, SieveResult } from "@shadow/shared";
 
 const NOREPLY_PATTERN = /^(noreply|no-reply|donotreply|notifications?|automated?|mailer-daemon|postmaster|bounce|alert|updates?)@/i;
 
-const NEWSLETTER_SUBJECT_PATTERN = /\b(unsubscribe|newsletter|mailing.?list|weekly.?digest|monthly.?roundup)\b/i;
-const NEWSLETTER_DOMAIN_PATTERN = /\b(mailchimp|sendgrid|constantcontact|campaignmonitor|klaviyo|substack|beehiiv)\b/;
+const NEWSLETTER_SUBJECT_PATTERN = /\b(unsubscribe|newsletter|mailing.?list|weekly.?digest|monthly.?roundup)\b|뉴스레터|레터/i;
+const NEWSLETTER_DOMAIN_PATTERN = /\b(mailchimp|sendgrid|constantcontact|campaignmonitor|klaviyo|substack|beehiiv|facebookmail|instagram|twittermail)\b/;
 
 const SPAM_SUBJECT_PATTERN =
   /\b(you.?ve won|you.?re the winner|lottery|claim your prize|unclaimed (funds|inheritance)|million (dollars?|USD)|cheap(est)? (meds?|pills?|viagra|cialis)|enlarge|work from home|make money fast|limited time offer|act now|urgent reply)\b/i;
+
+// Korean statutory ad label — KT Act requires (광고) or [광고] prefix in subject
+const KOREAN_AD_PATTERN = /^[\(\[](광고|홍보)[\)\]]/;
 
 interface BuiltinRule {
   label: string;
@@ -22,7 +25,7 @@ const SYSTEM_RULES: BuiltinRule[] = [
   {
     label: "spam",
     action: "auto_delete",
-    test: (j) => SPAM_SUBJECT_PATTERN.test(j.subject),
+    test: (j) => SPAM_SUBJECT_PATTERN.test(j.subject) || KOREAN_AD_PATTERN.test(j.subject),
   },
   {
     label: "system_notification",

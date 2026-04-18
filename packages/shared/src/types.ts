@@ -54,6 +54,8 @@ export interface InboundEmailJob {
   senderLocalPart: string;
   /** Email subject — ephemeral in Redis (TTL 5 min), never stored in DB */
   subject: string;
+  /** First 500 chars of email body — ephemeral, used for L2 newsletter/phishing signals */
+  bodyPreview?: string;
   rawS3Key: string;
   receivedAt: string;
   /** To header addresses — ephemeral, used for Phase 3 recipient classification */
