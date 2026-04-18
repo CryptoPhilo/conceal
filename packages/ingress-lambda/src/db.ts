@@ -44,13 +44,15 @@ export async function insertEmailLog(entry: {
   subjectHash: string;
   receivedAt: Date;
   actionTaken: string;
+  senderDomain?: string;
 }) {
   const sql = getDb();
   await sql`
     INSERT INTO email_log
-      (user_id, masking_address_id, sender_hash, subject_hash, received_at, action_taken)
+      (user_id, masking_address_id, sender_hash, subject_hash, received_at, action_taken, sender_domain)
     VALUES
       (${entry.userId}, ${entry.maskingAddressId}, ${entry.senderHash},
-       ${entry.subjectHash}, ${entry.receivedAt}, ${entry.actionTaken})
+       ${entry.subjectHash}, ${entry.receivedAt}, ${entry.actionTaken},
+       ${entry.senderDomain ?? null})
   `;
 }

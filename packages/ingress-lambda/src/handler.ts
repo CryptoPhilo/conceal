@@ -86,6 +86,7 @@ async function routeRecipient(
     subjectHash,
     receivedAt: new Date(),
     actionTaken: "delivered",
+    senderDomain,
   });
 
   const job: InboundEmailJob = {

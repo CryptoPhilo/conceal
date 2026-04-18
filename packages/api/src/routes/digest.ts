@@ -61,4 +61,63 @@ export async function digestRoutes(app: FastifyInstance) {
 
     return { period: "7d", counts };
   });
+
+  // GET /v1/dashboard/grouped — three group views for the last 7 days
+  app.get("/dashboard/grouped", async (req) => {
+    const sql = getDb();
+    const userId = (req.user as { sub: string }).sub;
+
+    const [workTypeRows, senderRows, urgentRows] = await Promise.all([
+      // Work-type distribution (each email may appear in multiple work types)
+      sql<Array<{ work_type: string; count: number }>>`
+        SELECT unnest(work_types) AS work_type, COUNT(*)::int AS count
+        FROM email_log
+        WHERE user_id = ${userId}
+          AND received_at >= now() - interval '7 days'
+          AND cardinality(work_types) > 0
+        GROUP BY work_type
+        ORDER BY count DESC
+      `,
+      // Top 20 sender domains by volume
+      sql<Array<{ sender_domain: string; count: number; labels: string[]; work_types: string[] }>>`
+        SELECT
+          sender_domain,
+          COUNT(*)::int AS count,
+          array_agg(DISTINCT sieve_label) FILTER (WHERE sieve_label IS NOT NULL) AS labels,
+          (SELECT array_agg(DISTINCT wt) FROM unnest(array_agg(work_types)) AS sub(arr), unnest(sub.arr) AS wt) AS work_types
+        FROM email_log
+        WHERE user_id = ${userId}
+          AND received_at >= now() - interval '7 days'
+          AND sender_domain IS NOT NULL
+        GROUP BY sender_domain
+        ORDER BY count DESC
+        LIMIT 20
+      `,
+      // Urgent emails (sieve_label = urgent OR priority_score >= 80)
+      sql<Array<{ sender_domain: string | null; summary: string | null; priority_score: number | null; received_at: string; sieve_label: string | null }>>`
+        SELECT sender_domain, summary, priority_score, received_at, sieve_label
+        FROM email_log
+        WHERE user_id = ${userId}
+          AND received_at >= now() - interval '7 days'
+          AND (sieve_label = 'urgent' OR priority_score >= 80)
+        ORDER BY priority_score DESC NULLS LAST, received_at DESC
+        LIMIT 20
+      `,
+    ]);
+
+    return {
+      period: "7d",
+      workTypes: workTypeRows.map((r) => ({ workType: r.work_type, count: r.count })),
+      topSenders: senderRows.map((r) => ({
+        senderDomain: r.sender_domain,
+        count: r.count,
+        labels: r.labels ?? [],
+        topWorkTypes: r.work_types ?? [],
+      })),
+      urgent: {
+        count: urgentRows.length,
+        emails: urgentRows,
+      },
+    };
+  });
 }
