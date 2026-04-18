@@ -93,13 +93,13 @@ export async function digestRoutes(app: FastifyInstance) {
         ORDER BY count DESC
         LIMIT 20
       `,
-      // Urgent emails (sieve_label = urgent OR priority_score >= 80)
+      // Urgent emails: only LLM-verified urgent (prevents keyword spoofing)
       sql<Array<{ sender_domain: string | null; summary: string | null; priority_score: number | null; received_at: string; sieve_label: string | null }>>`
         SELECT sender_domain, summary, priority_score, received_at, sieve_label
         FROM email_log
         WHERE user_id = ${userId}
           AND received_at >= now() - interval '7 days'
-          AND (sieve_label = 'urgent' OR priority_score >= 80)
+          AND urgent_verified = true
         ORDER BY priority_score DESC NULLS LAST, received_at DESC
         LIMIT 20
       `,

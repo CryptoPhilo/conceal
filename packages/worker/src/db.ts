@@ -147,6 +147,74 @@ export async function loadUserLocale(userId: string): Promise<string> {
   }
 }
 
+export async function updateEmailLogUrgentVerified(
+  senderHash: string,
+  subjectHash: string,
+  userId: string,
+  urgentVerified: boolean
+) {
+  const sql = getDb();
+  await sql`
+    UPDATE email_log
+    SET urgent_verified = ${urgentVerified}
+    WHERE sender_hash = ${senderHash}
+      AND subject_hash = ${subjectHash}
+      AND user_id = ${userId}
+      AND received_at >= now() - interval '10 minutes'
+    LIMIT 1
+  `;
+}
+
+// Returns how many emails from this domain the user has received in total
+export async function getDomainSendCount(domain: string, userId: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql<Array<{ count: number }>>`
+    SELECT COUNT(*)::int AS count
+    FROM email_log
+    WHERE user_id = ${userId}
+      AND sender_domain = ${domain}
+  `;
+  return rows[0]?.count ?? 0;
+}
+
+// Returns how many urgent-flagged emails from this domain arrived in the last hour (rate-limit check)
+export async function getDomainUrgentRateLimit(domain: string, userId: string): Promise<number> {
+  const sql = getDb();
+  const rows = await sql<Array<{ count: number }>>`
+    SELECT COUNT(*)::int AS count
+    FROM email_log
+    WHERE user_id = ${userId}
+      AND sender_domain = ${domain}
+      AND (sieve_label = 'urgent' OR priority_score >= 80)
+      AND received_at >= now() - interval '1 hour'
+  `;
+  return rows[0]?.count ?? 0;
+}
+
+// Upserts domain_trust_stats for longitudinal false-positive tracking
+export async function upsertDomainTrustStats(
+  domain: string,
+  wasUrgentFlagged: boolean,
+  wasVerified: boolean
+) {
+  const sql = getDb();
+  await sql`
+    INSERT INTO domain_trust_stats (domain, total_seen, urgent_flagged, urgent_verified, last_updated)
+    VALUES (
+      ${domain},
+      1,
+      ${wasUrgentFlagged ? 1 : 0},
+      ${wasVerified ? 1 : 0},
+      now()
+    )
+    ON CONFLICT (domain) DO UPDATE SET
+      total_seen      = domain_trust_stats.total_seen + 1,
+      urgent_flagged  = domain_trust_stats.urgent_flagged + ${wasUrgentFlagged ? 1 : 0},
+      urgent_verified = domain_trust_stats.urgent_verified + ${wasVerified ? 1 : 0},
+      last_updated    = now()
+  `;
+}
+
 export async function markEmailDelivered(
   senderHash: string,
   subjectHash: string,

@@ -6,10 +6,12 @@ import { QUEUE_NAMES } from "@shadow/shared";
 import {
   updateEmailLogBrain,
   updateEmailLogPhase3,
+  updateEmailLogUrgentVerified,
   loadUserContextVectors,
 } from "../db.js";
 import { classifyPhase2 } from "../classifier-phase2.js";
 import { classifyPhase3 } from "../classifier-phase3.js";
+import { verifyUrgent } from "../urgent-verifier.js";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -136,6 +138,9 @@ export async function processBrain(
   );
 
   const dbAction = result.action === "reply" ? "replied" : "delivered";
+  const isUrgentCandidate =
+    data.sieveLabel === "urgent" || result.priorityScore >= 80;
+
   try {
     await Promise.all([
       updateEmailLogBrain(
@@ -159,6 +164,31 @@ export async function processBrain(
     ]);
   } catch (err) {
     job.log(`[brain] warn: updateEmailLog failed: ${String(err)}`);
+  }
+
+  if (isUrgentCandidate) {
+    try {
+      const verifyResult = await verifyUrgent({
+        subject: data.subject,
+        senderDomain: data.senderDomain,
+        sieveLabel: data.sieveLabel ?? null,
+        workTypes: phase2.workTypes,
+        informationalCategory: phase2.informationalCategory,
+        priorityScore: result.priorityScore,
+        userId: data.userId,
+      });
+      job.log(
+        `[brain] urgent-verify — verified=${verifyResult.urgentVerified} reason="${verifyResult.reason}"`
+      );
+      await updateEmailLogUrgentVerified(
+        data.senderHash,
+        data.subjectHash,
+        data.userId,
+        verifyResult.urgentVerified
+      );
+    } catch (err) {
+      job.log(`[brain] warn: urgent verification failed: ${String(err)}`);
+    }
   }
 
   const deliveryPayload: DeliveryJob = {
