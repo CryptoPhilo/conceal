@@ -15,8 +15,9 @@
  *   RESUME              Set to "1" to skip already-processed message IDs.
  *
  * CLI flags:
- *   --input <path>   Input JSONL file (default: inbox-raw.jsonl)
- *   --output <path>  Output JSONL file (default: pipeline-results.jsonl)
+ *   --input <path>         Input JSONL file (default: inbox-raw.jsonl)
+ *   --output <path>        Output JSONL file (default: pipeline-results.jsonl)
+ *   --train-output <path>  If set, write silver training corpus alongside results
  */
 
 import { readFileSync, appendFileSync, existsSync } from "node:fs";
@@ -27,18 +28,21 @@ import { parseArgs } from "node:util";
 import { classify } from "../packages/worker/src/sieve.js";
 import { classifyPhase2 } from "../packages/worker/src/classifier-phase2.js";
 import { classifyPhase3 } from "../packages/worker/src/classifier-phase3.js";
+import { toTrainingExample } from "./export-training-data.js";
 import type { InboundEmailJob } from "@shadow/shared";
 
 const { values: args } = parseArgs({
   options: {
     input: { type: "string", default: "inbox-raw.jsonl" },
     output: { type: "string", default: "pipeline-results.jsonl" },
+    "train-output": { type: "string" },
   },
   strict: false,
 });
 
 const INPUT_FILE = args.input as string;
 const OUTPUT_FILE = args.output as string;
+const TRAIN_OUTPUT = args["train-output"] as string | undefined;
 const SIEVE_SERVICE_URL = process.env.SIEVE_SERVICE_URL ?? "http://localhost:8000";
 const CONCURRENCY = parseInt(process.env.CONCURRENCY ?? "5", 10);
 const SKIP_BRAIN = process.env.SKIP_BRAIN === "1";
@@ -312,9 +316,15 @@ async function main() {
   let done = 0;
   const start = Date.now();
 
+  if (TRAIN_OUTPUT) console.log(`Training corpus output: ${TRAIN_OUTPUT}`);
+
   await runPool(todo, CONCURRENCY, async (row, _i) => {
     const result = await processRow(row);
     appendFileSync(OUTPUT_FILE, JSON.stringify(result) + "\n");
+    if (TRAIN_OUTPUT) {
+      const ex = toTrainingExample(result as Parameters<typeof toTrainingExample>[0]);
+      if (ex) appendFileSync(TRAIN_OUTPUT, JSON.stringify(ex) + "\n");
+    }
     done++;
     if (done % 50 === 0 || done === todo.length) {
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
