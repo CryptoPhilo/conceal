@@ -105,7 +105,8 @@ describe("processBrain — valid Claude response", () => {
       72,
       "delivered",
       "action_required",
-      ["meeting"]
+      ["meeting"],
+      "example.com"
     );
 
     expect(addMock).toHaveBeenCalledWith(
@@ -137,7 +138,8 @@ describe("processBrain — valid Claude response", () => {
     expect(updateEmailLogBrainMock).toHaveBeenCalledWith(
       expect.any(String), expect.any(String), expect.any(String),
       "Vendor wants a meeting", 30, "replied",
-      "action_required", ["meeting"]
+      "action_required", ["meeting"],
+      expect.any(String)
     );
 
     expect(addMock).toHaveBeenCalledWith(
