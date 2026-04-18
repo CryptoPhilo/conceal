@@ -14,11 +14,23 @@ function OAuthCallbackInner() {
     const error = params.get('error');
     if (token) {
       localStorage.setItem('conceal_token', token);
-      router.replace('/onboarding/step2');
+      // Decode JWT payload to extract email and save it
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+          if (payload.email) {
+            localStorage.setItem('conceal_auth_email', payload.email);
+          }
+        }
+      } catch {
+        // ignore decode errors
+      }
+      router.replace('/onboarding/step0');
     } else if (error) {
       router.replace('/onboarding/step1');
     } else {
-      router.replace('/onboarding/step2');
+      router.replace('/onboarding/step0');
     }
   }, [params, router]);
 

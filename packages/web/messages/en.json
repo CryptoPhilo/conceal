@@ -2,11 +2,28 @@
   "home": {
     "title": "Conceal",
     "tagline": "A service that helps you stop seeing emails.\nBreak free from your inbox.",
-    "cta_start": "Get Started",
+    "headline": "How many unread emails are in your inbox right now?",
+    "intro": "With Conceal:",
+    "benefit_1": "Save an average of 47 minutes a day on email",
+    "benefit_2": "Get instant alerts for urgent emails, the rest handled automatically",
+    "benefit_3": "Start Monday morning with one weekend email summary",
+    "privacy_title": "🔒 Your Personal Email Agent",
+    "privacy_body": "Every user gets a dedicated AI agent.\nThis agent processes only your emails,\nand no one can access your email content\nor extract data under any circumstances.",
+    "privacy_check_1": "Email content is never shared externally",
+    "privacy_check_2": "Agent only learns your automation rules",
+    "privacy_check_3": "Disconnect at any time",
+    "cta_start": "Start free with Google",
     "cta_dashboard": "Go to Dashboard",
     "privacy_note": "🔒 Read-only access only"
   },
   "onboarding": {
+    "step0": {
+      "title": "Welcome!",
+      "subtitle": "Would you like to use your Google sign-in email as your managed account?",
+      "accept": "Yes, start with this email",
+      "skip": "I'll connect a different email",
+      "error_default": "Something went wrong"
+    },
     "step1": {
       "title": "Connect your email account",
       "privacy_note": "🔒 Read-only access only",
